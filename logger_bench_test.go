@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"go.uber.org/zap"
+
+	"github.com/ruko1202/xlog/field"
 )
 
 func BenchmarkLogger(b *testing.B) {
@@ -55,7 +57,7 @@ func BenchmarkAdvance_WithOperation(b *testing.B) {
 		})
 		b.Run("with operation name and fields", func(b *testing.B) {
 			withBenchedLogger(b, func() {
-				ctx = WithOperation(ctx, "xlog operation", zap.String("key", "value"))
+				ctx = WithOperation(ctx, "xlog operation", field.String("key", "value"))
 				Info(ctx, "hello world")
 			})
 		})
@@ -76,7 +78,7 @@ func BenchmarkAdvance_WithFields(b *testing.B) {
 	b.Run("xlog", func(b *testing.B) {
 		ctx = ContextWithLogger(ctx, zap.NewNop())
 		withBenchedLogger(b, func() {
-			ctx = WithFields(ctx, zap.String("key", "value"))
+			ctx = WithFields(ctx, field.String("key", "value"))
 			Info(ctx, "hello world")
 		})
 	})
