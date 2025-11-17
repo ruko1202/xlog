@@ -1,16 +1,20 @@
-// Package xlog предоставляет обертку над uber-go/zap для логирования с поддержкой context.Context.
+// Package xlog provides a wrapper around uber-go/zap for context-aware logging.
 //
-// Пакет позволяет сохранять логгер в контексте и автоматически извлекать его при вызове
-// функций логирования. Если логгер не найден в контексте, используется глобальный логгер.
+// The package allows storing a logger in context and automatically extracting it
+// when logging functions are called. If logger is not found in context, the global logger is used.
 package xlog
 
 import (
 	"context"
+	"sync"
 
 	"go.uber.org/zap"
 )
 
-var globalLogger = zap.NewNop()
+var (
+	globalMu     sync.Mutex
+	globalLogger = zap.NewNop()
+)
 
 type ctxKey string
 
@@ -18,9 +22,9 @@ const (
 	loggerCtxKey ctxKey = "xLoggerKey"
 )
 
-// ContextWithLogger добавляет логгер в контекст и возвращает новый контекст.
+// ContextWithLogger adds a logger to the context and returns a new context.
 //
-// Пример:
+// Example:
 //
 //	logger, _ := zap.NewProduction()
 //	ctx := xlog.ContextWithLogger(context.Background(), logger)
@@ -28,28 +32,25 @@ func ContextWithLogger(ctx context.Context, logger *zap.Logger) context.Context 
 	return context.WithValue(ctx, loggerCtxKey, logger)
 }
 
-// FromContext извлекает логгер из контекста.
-// Если логгер не найден, возвращает глобальный логгер.
+// LoggerFromContext extracts logger from context.
+// If logger is not found, returns the global logger.
 //
-// Пример:
+// Example:
 //
 //	logger := xlog.FromContext(ctx)
-//	logger.Info("прямое использование zap логгера")
-func FromContext(ctx context.Context) *zap.Logger {
+//	logger.Info("direct zap logger usage")
+func LoggerFromContext(ctx context.Context) *zap.Logger {
 	return fromContext(ctx)
 }
 
-// SetGlobalLogger устанавливает глобальный логгер, который используется
-// когда логгер не найден в контексте.
-//
-// По умолчанию используется zap.NewNop() который не производит вывод.
-//
-// Пример:
-//
-//	logger, _ := zap.NewDevelopment()
-//	xlog.SetGlobalLogger(logger)
-func SetGlobalLogger(logger *zap.Logger) {
+func ReplaceGlobal(logger *zap.Logger) func() {
+	globalMu.Lock()
+	defer globalMu.Unlock()
+
+	prev := globalLogger
 	globalLogger = logger
+
+	return func() { ReplaceGlobal(prev) }
 }
 
 func fromContext(ctx context.Context) *zap.Logger {
