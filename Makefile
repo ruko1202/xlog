@@ -82,7 +82,7 @@ test-cov:
 
 .PHONY: test-bench
 test-bench:
-	go test -bench=. -benchtime 100ms .
+	go test -bench=. -benchtime 100000x -run='^&' -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem
 
 # -------------------------------------
 # Linter and formatter

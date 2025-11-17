@@ -16,10 +16,10 @@ var (
 	globalLogger = zap.NewNop()
 )
 
-type ctxKey string
+type xlogCtxKey string
 
 const (
-	loggerCtxKey ctxKey = "xLoggerKey"
+	loggerCtxKey xlogCtxKey = "xLoggerKey"
 )
 
 // ContextWithLogger adds a logger to the context and returns a new context.
