@@ -1,4 +1,5 @@
 # xlog
+![Coverage](https://img.shields.io/badge/Coverage-97.2%25-brightgreen)
 
 A wrapper around [zap](https://github.com/uber-go/zap) for context-aware logging.
 
