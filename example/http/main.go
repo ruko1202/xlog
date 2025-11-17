@@ -56,11 +56,13 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 func processRequest(ctx context.Context, r *http.Request) error {
 	ctx = xlog.WithOperation(ctx, "processRequest")
 
-	value := r.URL.Query().Get("key")
-	if value == "" {
-		return fmt.Errorf("missing `key`")
+	userID := r.URL.Query().Get("userId")
+	if userID == "" {
+		return fmt.Errorf("missing `userId`")
 	}
-	xlog.Infof(ctx, "request processed with value %s", value)
+
+	ctx = xlog.WithFields(ctx, zap.String("userId", userID))
+	xlog.Info(ctx, "request processed")
 
 	return nil
 }

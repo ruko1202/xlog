@@ -25,7 +25,7 @@ func BenchmarkLogger(b *testing.B) {
 	})
 }
 
-func BenchmarkAdvanceLogger(b *testing.B) {
+func BenchmarkAdvance_WithOperation(b *testing.B) {
 	ctx := context.Background()
 
 	b.Run("zap", func(b *testing.B) {
@@ -58,6 +58,26 @@ func BenchmarkAdvanceLogger(b *testing.B) {
 				ctx = WithOperation(ctx, "xlog operation", zap.String("key", "value"))
 				Info(ctx, "hello world")
 			})
+		})
+	})
+}
+func BenchmarkAdvance_WithFields(b *testing.B) {
+	ctx := context.Background()
+
+	b.Run("zap", func(b *testing.B) {
+		logger := zap.NewNop()
+		withBenchedLogger(b, func() {
+			logger.
+				With(zap.String("key", "value")).
+				Info("hello world")
+		})
+	})
+
+	b.Run("xlog", func(b *testing.B) {
+		ctx = ContextWithLogger(ctx, zap.NewNop())
+		withBenchedLogger(b, func() {
+			ctx = WithFields(ctx, zap.String("key", "value"))
+			Info(ctx, "hello world")
 		})
 	})
 }

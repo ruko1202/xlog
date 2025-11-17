@@ -15,3 +15,12 @@ func WithOperation(ctx context.Context, operation string, fields ...zap.Field) c
 
 	return ContextWithLogger(ctx, logger)
 }
+
+// WithFields creates a new context with additional fields added to the logger.
+// It extracts the logger from the context and adds the specified fields.
+func WithFields(ctx context.Context, fields ...zap.Field) context.Context {
+	logger := fromContext(ctx).
+		With(fields...)
+	
+	return ContextWithLogger(ctx, logger)
+}
