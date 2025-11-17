@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  MAIN_GO_VERSION: 1.23
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.3.0
+          args: --timeout=5m
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.23', '1.24']
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: make test-cov
+
+      - name: Upload coverage artifact
+        if: ${{ env.MAIN_GO_VERSION == matrix.go-version }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage
+          path: coverage.out
+          retention-days: 7
+
+  report-coverage:
+    name: Report Coverage
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Download coverage
+        uses: actions/download-artifact@v6
+        with:
+          name: coverage
+
+      - name: Generate coverage report
+        run: |
+          go tool cover -func=coverage.out | sed 's|github.com/ruko1202/xlog||' | sed -E 's/\t+/\t/g' | tee coverage.report
+
+      - name: Get coverage percentage
+        id: coverage
+        run: |
+          COVERAGE=$(tail -1 coverage.report | awk '{print $NF}' | sed 's/%//')
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+
+      - name: Get detailed coverage
+        id: coverage-details
+        run: |
+          echo "details<<EOF" >> $GITHUB_OUTPUT
+          cat coverage.report >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment PR with coverage
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          message: |
+            ## Test Coverage Report
+
+            **Total Coverage:** ${{ steps.coverage.outputs.coverage }}%
+
+            Coverage collected from tests running on Go ${{ env.MAIN_GO_VERSION }}
+
+            <details>
+            <summary>Coverage by Package</summary>
+
+            ```
+            ${{ steps.coverage-details.outputs.details }}
+            ```
+            </details>
+
+  update-coverage-badge:
+    name: Update Coverage Badge
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Download coverage
+        uses: actions/download-artifact@v6
+        with:
+          name: coverage
+
+      - name: Generate coverage report
+        run: |
+          go tool cover -func=coverage.out | sed 's|github.com/ruko1202/xlog||' | sed -E 's/\t+/\t/g' | tee coverage.report
+
+      - name: Generate coverage badge
+        uses: tj-actions/coverage-badge-go@v3
+        with:
+          filename: coverage.report
+
+      - name: Verify changed files
+        uses: tj-actions/verify-changed-files@v20.0.4
+        id: verify-changed-files
+        with:
+          files: README.md
+
+      - name: Commit coverage badge
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.md
+          git commit -m "Update coverage badge [skip ci]"
+
+      - name: Push changes
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
