@@ -6,3 +6,9 @@ bin/
 coverage.out
 
 coverage.report
+
+mem.pprof
+
+cpu.pprof
+
+xlog.test
