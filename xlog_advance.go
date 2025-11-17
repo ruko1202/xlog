@@ -21,6 +21,6 @@ func WithOperation(ctx context.Context, operation string, fields ...zap.Field) c
 func WithFields(ctx context.Context, fields ...zap.Field) context.Context {
 	logger := fromContext(ctx).
 		With(fields...)
-	
+
 	return ContextWithLogger(ctx, logger)
 }
