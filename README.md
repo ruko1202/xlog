@@ -1,5 +1,9 @@
 # xlog
+
+[![CI](https://github.com/ruko1202/xlog/actions/workflows/ci.yml/badge.svg)](https://github.com/ruko1202/xlog/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ruko1202/xlog)](https://goreportcard.com/report/github.com/ruko1202/xlog)
 ![Coverage](https://img.shields.io/badge/Coverage-97.2%25-brightgreen)
+[![Go Reference](https://pkg.go.dev/badge/github.com/ruko1202/xlog.svg)](https://pkg.go.dev/github.com/ruko1202/xlog)
 
 A wrapper around [zap](https://github.com/uber-go/zap) for context-aware logging.
 
@@ -265,19 +269,58 @@ func backgroundWorker(ctx context.Context) {
 - **Fatal** - Critical errors that terminate the application (calls os.Exit(1))
 - **Panic** - Critical errors that cause panic
 
-## Testing
+## Development
+
+### Testing
 
 The package includes a comprehensive test suite. To run tests:
 
 ```bash
-go test -v ./...
+# Run all tests
+make tloc
+
+# Run tests with coverage
+make test-cov
 ```
 
-To check test coverage:
+Or using go commands directly:
 
 ```bash
+# Run tests
+go test -v ./...
+
+# Run tests with coverage
 go test -cover ./...
 ```
+
+### Code Quality
+
+```bash
+# Install linter
+make bin-deps
+
+# Run linter
+make lint
+
+# Format code
+make fmt
+```
+
+### CI/CD
+
+The project uses GitHub Actions for continuous integration:
+
+- **CI Pipeline** - Runs on every push and pull request:
+  - Linting with golangci-lint v2.3.0
+  - Tests on Go 1.23 and 1.24 with race detector
+  - Coverage reporting in pull requests
+  - Automatic coverage badge updates on main branch
+
+- **Release Pipeline** - Triggered on version tags (v*):
+  - Automated releases using GoReleaser
+  - Changelog generation
+
+See [.github/workflows/](.github/workflows/) for workflow configurations.
 
 ## Performance
 
