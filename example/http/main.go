@@ -16,7 +16,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	logger = logger.Named("example app")
 
 	xlog.ReplaceGlobal(logger)
 	ctx := xlog.ContextWithLogger(context.Background(), logger)
@@ -36,12 +35,12 @@ func runApp(ctx context.Context) {
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	ctx = xlog.ContextWithLogger(ctx, xlog.LoggerFromContext(ctx).With(
+	ctx = xlog.WithOperation(ctx, "handleRequest",
 		zap.String("request_id", uuid.NewString()),
 		zap.String("method", r.Method),
 		zap.String("path", r.URL.Path),
 		zap.String("query", r.URL.RawQuery),
-	))
+	)
 
 	xlog.Info(ctx, "request processing started")
 
@@ -55,6 +54,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func processRequest(ctx context.Context, r *http.Request) error {
+	ctx = xlog.WithOperation(ctx, "processRequest")
+
 	value := r.URL.Query().Get("key")
 	if value == "" {
 		return fmt.Errorf("missing `key`")
