@@ -37,12 +37,28 @@ func ContextWithLogger(ctx context.Context, logger *zap.Logger) context.Context 
 //
 // Example:
 //
-//	logger := xlog.FromContext(ctx)
+//	logger := xlog.LoggerFromContext(ctx)
 //	logger.Info("direct zap logger usage")
 func LoggerFromContext(ctx context.Context) *zap.Logger {
 	return fromContext(ctx)
 }
 
+// ReplaceGlobal replaces the global logger and returns a function to restore the previous logger.
+// This function is thread-safe and can be used for testing or temporarily changing the logger.
+//
+// Example:
+//
+//	logger, _ := zap.NewProduction()
+//	restore := xlog.ReplaceGlobal(logger)
+//	defer restore() // Restore previous logger when done
+//
+//	// Or for testing:
+//	func TestSomething(t *testing.T) {
+//	    testLogger := zaptest.NewLogger(t)
+//	    restore := xlog.ReplaceGlobal(testLogger)
+//	    defer restore()
+//	    // test code
+//	}
 func ReplaceGlobal(logger *zap.Logger) func() {
 	globalMu.Lock()
 	defer globalMu.Unlock()
