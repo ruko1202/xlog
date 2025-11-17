@@ -3,8 +3,6 @@ package xlog
 import (
 	"context"
 	"fmt"
-
-	"github.com/ruko1202/xlog/field"
 )
 
 // Debug logs a Debug level message with structured fields.
@@ -12,8 +10,8 @@ import (
 //
 // Example:
 //
-//	xlog.Debug(ctx, "debug message", zap.String("key", "value"))
-func Debug(ctx context.Context, msg string, fields ...field.Field) {
+//	xlog.Debug(ctx, "debug message", xlog.String("key", "value"))
+func Debug(ctx context.Context, msg string, fields ...Field) {
 	logger := fromContext(ctx)
 	logger.Debug(msg, fields...)
 }
@@ -34,8 +32,8 @@ func Debugf(ctx context.Context, template string, args ...any) {
 //
 // Example:
 //
-//	xlog.Info(ctx, "request processed", zap.Duration("took", time.Second))
-func Info(ctx context.Context, msg string, fields ...field.Field) {
+//	xlog.Info(ctx, "request processed", xlog.Duration("took", time.Second))
+func Info(ctx context.Context, msg string, fields ...Field) {
 	logger := fromContext(ctx)
 	logger.Info(msg, fields...)
 }
@@ -56,8 +54,8 @@ func Infof(ctx context.Context, template string, args ...any) {
 //
 // Example:
 //
-//	xlog.Warn(ctx, "slow query", zap.Duration("took", time.Second*5))
-func Warn(ctx context.Context, msg string, fields ...field.Field) {
+//	xlog.Warn(ctx, "slow query", xlog.Duration("took", time.Second*5))
+func Warn(ctx context.Context, msg string, fields ...Field) {
 	logger := fromContext(ctx)
 	logger.Warn(msg, fields...)
 }
@@ -78,8 +76,8 @@ func Warnf(ctx context.Context, template string, args ...any) {
 //
 // Example:
 //
-//	xlog.Error(ctx, "database query error", zap.Error(err))
-func Error(ctx context.Context, msg string, fields ...field.Field) {
+//	xlog.Error(ctx, "database query error", xlog.Error(err))
+func Error(ctx context.Context, msg string, fields ...Field) {
 	logger := fromContext(ctx)
 	logger.Error(msg, fields...)
 }
@@ -101,8 +99,8 @@ func Errorf(ctx context.Context, template string, args ...any) {
 //
 // Example:
 //
-//	xlog.Fatal(ctx, "critical error", zap.Error(err))
-func Fatal(ctx context.Context, msg string, fields ...field.Field) {
+//	xlog.Fatal(ctx, "critical error", xlog.Error(err))
+func Fatal(ctx context.Context, msg string, fields ...Field) {
 	logger := fromContext(ctx)
 	logger.Fatal(msg, fields...)
 }
@@ -124,8 +122,8 @@ func Fatalf(ctx context.Context, template string, args ...any) {
 //
 // Example:
 //
-//	xlog.Panic(ctx, "unexpected state", zap.String("state", state))
-func Panic(ctx context.Context, msg string, fields ...field.Field) {
+//	xlog.Panic(ctx, "unexpected state", xlog.String("state", state))
+func Panic(ctx context.Context, msg string, fields ...Field) {
 	logger := fromContext(ctx)
 	logger.Panic(msg, fields...)
 }

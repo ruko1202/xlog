@@ -11,7 +11,7 @@ A wrapper around [zap](https://github.com/uber-go/zap) for context-aware logging
 
 - Context-aware logging - logger is extracted from context
 - Global logger fallback support with thread-safe replacement
-- Structured logging via zap.Field
+- Structured logging via zap.Field with convenient field constructor aliases
 - Printf-style formatting (Debugf, Infof, etc.)
 - All logging levels: Debug, Info, Warn, Error, Fatal, Panic
 - Zero allocation when logger is not in context (uses zap.NewNop())
@@ -50,9 +50,15 @@ func main() {
     ctx := context.Background()
     ctx = xlog.ContextWithLogger(ctx, logger)
 
-    // Use logging
+    // Use logging with zap fields
     xlog.Infof(ctx, "application `%s` started", appName)
     xlog.Debug(ctx, "debug information", zap.String("version", "1.0.0"))
+
+    // Or use convenient xlog field aliases
+    xlog.Info(ctx, "user logged in",
+        xlog.StringField("user_id", "12345"),
+        xlog.IntField("login_count", 42),
+    )
 }
 ```
 
@@ -111,14 +117,14 @@ restore := xlog.ReplaceGlobal(logger)
 defer restore() // Restore previous logger when done
 ```
 
-#### `WithOperation(ctx context.Context, operation string, fields ...zap.Field) context.Context`
+#### `WithOperation(ctx context.Context, operation string, fields ...Field) context.Context`
 
 Creates a new context with a named logger for a specific operation.
 
 ```go
 ctx = xlog.WithOperation(ctx, "payment-processing",
-    zap.String("user_id", "12345"),
-    zap.String("payment_id", "pay_xyz"),
+    xlog.StringField("user_id", "12345"),
+    xlog.StringField("payment_id", "pay_xyz"),
 )
 xlog.Info(ctx, "processing payment")
 ```
@@ -130,9 +136,9 @@ xlog.Info(ctx, "processing payment")
 ```go
 // Instead of WithOperation - use WithFields for better performance
 ctx = xlog.WithFields(ctx,
-    zap.String("operation", "payment-processing"),
-    zap.String("user_id", "12345"),
-    zap.String("payment_id", "pay_xyz"),
+    xlog.StringField("operation", "payment-processing"),
+    xlog.StringField("user_id", "12345"),
+    xlog.StringField("payment_id", "pay_xyz"),
 )
 xlog.Info(ctx, "processing payment")
 ```
@@ -141,9 +147,9 @@ Or use fields directly in log calls for single statements:
 
 ```go
 xlog.Info(ctx, "processing payment",
-    zap.String("operation", "payment-processing"),
-    zap.String("user_id", "12345"),
-    zap.String("payment_id", "pay_xyz"),
+    xlog.StringField("operation", "payment-processing"),
+    xlog.StringField("user_id", "12345"),
+    xlog.StringField("payment_id", "pay_xyz"),
 )
 ```
 
@@ -152,15 +158,15 @@ Use `WithOperation` only when:
 - Performance is not critical
 - The operation context will be used for many log statements
 
-#### `WithFields(ctx context.Context, fields ...zap.Field) context.Context`
+#### `WithFields(ctx context.Context, fields ...Field) context.Context`
 
 Creates a new context with additional fields added to the logger. This is the recommended way to add persistent fields to a logger context.
 
 ```go
 // Add user context to logger
 ctx = xlog.WithFields(ctx,
-    zap.String("user_id", "12345"),
-    zap.String("session_id", "sess_xyz"),
+    xlog.StringField("user_id", "12345"),
+    xlog.StringField("session_id", "sess_xyz"),
 )
 
 // All subsequent logs will include these fields
@@ -170,26 +176,90 @@ xlog.Debug(ctx, "processing request")
 
 **Performance**: Better than `WithOperation` but still creates new logger instances. For single log statements, passing fields directly is most efficient.
 
+### Field Constructors
+
+xlog provides convenient aliases for all zap field constructors with a `Field` suffix. You can use either `zap` field constructors or `xlog` aliases - they are functionally identical.
+
+#### Available Field Types
+
+**Basic types:**
+- `StringField(key, value string)` - String field
+- `IntField(key string, value int)` - Int field
+- `Int64Field(key string, value int64)` - Int64 field
+- `Int32Field(key string, value int32)` - Int32 field
+- `UintField(key string, value uint)` - Uint field
+- `Uint64Field(key string, value uint64)` - Uint64 field
+- `Uint32Field(key string, value uint32)` - Uint32 field
+- `Float64Field(key string, value float64)` - Float64 field
+- `Float32Field(key string, value float32)` - Float32 field
+- `BoolField(key string, value bool)` - Bool field
+
+**Time and duration:**
+- `TimeField(key string, value time.Time)` - Time field
+- `DurationField(key string, value time.Duration)` - Duration field
+
+**Advanced types:**
+- `ErrorField(err error)` - Error field
+- `AnyField(key string, value interface{})` - Any arbitrary value
+- `BinaryField(key string, value []byte)` - Binary data
+- `ByteStringField(key string, value []byte)` - Byte slice as string
+- `Complex64Field(key string, value complex64)` - Complex64 field
+- `Complex128Field(key string, value complex128)` - Complex128 field
+
+**Special:**
+- `NamespaceField(key string)` - Create a namespace for subsequent fields
+- `ReflectField(key string, value interface{})` - Use reflection to construct field
+- `StringerField(key string, value fmt.Stringer)` - Use fmt.Stringer interface
+- `SkipField()` - No-op field
+
+#### Usage Examples
+
+```go
+// Using xlog field aliases
+xlog.Info(ctx, "user action",
+    xlog.StringField("user_id", "12345"),
+    xlog.IntField("age", 30),
+    xlog.BoolField("is_premium", true),
+    xlog.DurationField("request_time", time.Millisecond*150),
+)
+
+// Using zap fields directly (equivalent)
+xlog.Info(ctx, "user action",
+    zap.String("user_id", "12345"),
+    zap.Int("age", 30),
+    zap.Bool("is_premium", true),
+    zap.Duration("request_time", time.Millisecond*150),
+)
+
+// Error logging
+if err := doSomething(); err != nil {
+    xlog.Error(ctx, "operation failed",
+        xlog.ErrorField(err),
+        xlog.StringField("operation", "doSomething"),
+    )
+}
+```
+
 ### Logging Functions
 
 All logging functions require `context.Context` as the first argument.
 
 #### Structured Logging
 
-Functions with structured fields (zap.Field):
+Functions with structured fields (Field):
 
-- `Debug(ctx context.Context, msg string, fields ...zap.Field)`
-- `Info(ctx context.Context, msg string, fields ...zap.Field)`
-- `Warn(ctx context.Context, msg string, fields ...zap.Field)`
-- `Error(ctx context.Context, msg string, fields ...zap.Field)`
-- `Fatal(ctx context.Context, msg string, fields ...zap.Field)`
-- `Panic(ctx context.Context, msg string, fields ...zap.Field)`
+- `Debug(ctx context.Context, msg string, fields ...Field)`
+- `Info(ctx context.Context, msg string, fields ...Field)`
+- `Warn(ctx context.Context, msg string, fields ...Field)`
+- `Error(ctx context.Context, msg string, fields ...Field)`
+- `Fatal(ctx context.Context, msg string, fields ...Field)`
+- `Panic(ctx context.Context, msg string, fields ...Field)`
 
 ```go
 xlog.Info(ctx, "user logged in",
-    zap.String("user_id", "12345"),
-    zap.String("ip", "192.168.1.1"),
-    zap.Duration("login_time", time.Second*2),
+    xlog.StringField("user_id", "12345"),
+    xlog.StringField("ip", "192.168.1.1"),
+    xlog.DurationField("login_time", time.Second*2),
 )
 ```
 
@@ -222,16 +292,16 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
     // Add request context using WithFields (performance-friendly)
     ctx = xlog.WithFields(ctx,
-        zap.String("request_id", uuid.NewString()),
-        zap.String("method", r.Method),
-        zap.String("path", r.URL.Path),
-        zap.String("query", r.URL.RawQuery),
+        xlog.StringField("request_id", uuid.NewString()),
+        xlog.StringField("method", r.Method),
+        xlog.StringField("path", r.URL.Path),
+        xlog.StringField("query", r.URL.RawQuery),
     )
 
     xlog.Info(ctx, "request processing started")
 
     if err := processRequest(ctx, r); err != nil {
-        xlog.Error(ctx, "request processing error", zap.Error(err))
+        xlog.Error(ctx, "request processing error", xlog.ErrorField(err))
         http.Error(w, "Internal Server Error", 500)
         return
     }
@@ -243,8 +313,8 @@ func processRequest(ctx context.Context, r *http.Request) error {
     // For single log - pass fields directly (most efficient)
     userID := r.URL.Query().Get("userId")
     xlog.Debug(ctx, "processing user request",
-        zap.String("operation", "process-request"),
-        zap.String("user_id", userID),
+        xlog.StringField("operation", "process-request"),
+        xlog.StringField("user_id", userID),
     )
 
     // ... business logic ...
@@ -253,16 +323,16 @@ func processRequest(ctx context.Context, r *http.Request) error {
 }
 ```
 
-Alternative using:
+Alternative using `WithOperation`:
 
 ```go
 func handleRequest(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
     ctx = xlog.WithOperation(ctx, "handleRequest",
-      zap.String("request_id", uuid.NewString()),
-      zap.String("method", r.Method),
-      zap.String("path", r.URL.Path),
-      zap.String("query", r.URL.RawQuery),
+        xlog.StringField("request_id", uuid.NewString()),
+        xlog.StringField("method", r.Method),
+        xlog.StringField("path", r.URL.Path),
+        xlog.StringField("query", r.URL.RawQuery),
     )
 
     xlog.Info(ctx, "request processing started")
@@ -276,18 +346,18 @@ See [example/http](example/http/main.go) for a complete working example.
 
 ```go
 func getUserByID(ctx context.Context, userID string) (*User, error) {
-    xlog.Debug(ctx, "fetching user from database", zap.String("user_id", userID))
+    xlog.Debug(ctx, "fetching user from database", xlog.StringField("user_id", userID))
 
     user, err := db.Query(ctx, "SELECT * FROM users WHERE id = ?", userID)
     if err != nil {
         xlog.Error(ctx, "database query error",
-            zap.String("user_id", userID),
-            zap.Error(err),
+            xlog.StringField("user_id", userID),
+            xlog.ErrorField(err),
         )
         return nil, err
     }
 
-    xlog.Info(ctx, "user found", zap.String("user_id", userID))
+    xlog.Info(ctx, "user found", xlog.StringField("user_id", userID))
     return user, nil
 }
 ```
@@ -298,7 +368,7 @@ func getUserByID(ctx context.Context, userID string) (*User, error) {
 func backgroundWorker(ctx context.Context) {
     // Add worker context using WithFields
     ctx = xlog.WithFields(ctx,
-        zap.String("worker", "background-processor"),
+        xlog.StringField("worker", "background-processor"),
     )
 
     xlog.Info(ctx, "starting background processor")
@@ -311,12 +381,12 @@ func backgroundWorker(ctx context.Context) {
         case task := <-taskQueue:
             // Performance-friendly: pass fields directly for one-off logs
             xlog.Debug(ctx, "processing task",
-                zap.String("task_id", task.ID),
+                xlog.StringField("task_id", task.ID),
             )
             if err := processTask(ctx, task); err != nil {
                 xlog.Error(ctx, "task processing error",
-                    zap.String("task_id", task.ID),
-                    zap.Error(err),
+                    xlog.StringField("task_id", task.ID),
+                    xlog.ErrorField(err),
                 )
             }
         }
