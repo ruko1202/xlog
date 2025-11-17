@@ -1,6 +1,6 @@
 module github.com/ruko1202/xlog
 
-go 1.23.9
+go 1.23
 
 require (
 	github.com/stretchr/testify v1.8.1
