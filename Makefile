@@ -76,8 +76,8 @@ tloc:
 #   coverage.report: Human-readable coverage report
 .PHONY: test-cov
 test-cov:
-	go test -race -p 2 -count 2 -coverprofile=coverage.tmp -covermode atomic --coverpkg=./internal/... ./...
-	go tool cover -func=coverage.out | sed 's|github.com/ruko1202/xlog||' | sed -E 's/\t+/\t/g' | tee coverage.report
+	go test -race -p 2 -count 2 -coverprofile=coverage.out -covermode atomic ./...
+	go tool cover -func=coverage.out | sed 's|github.com/ruko1202/xlog/||' | sed -E 's/\t+/\t/g' | tee coverage.report
 
 
 .PHONY: test-bench
