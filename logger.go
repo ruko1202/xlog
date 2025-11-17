@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
+	"github.com/ruko1202/xlog/field"
 )
 
 // Debug logs a Debug level message with structured fields.
@@ -13,7 +13,7 @@ import (
 // Example:
 //
 //	xlog.Debug(ctx, "debug message", zap.String("key", "value"))
-func Debug(ctx context.Context, msg string, fields ...zap.Field) {
+func Debug(ctx context.Context, msg string, fields ...field.Field) {
 	logger := fromContext(ctx)
 	logger.Debug(msg, fields...)
 }
@@ -35,7 +35,7 @@ func Debugf(ctx context.Context, template string, args ...any) {
 // Example:
 //
 //	xlog.Info(ctx, "request processed", zap.Duration("took", time.Second))
-func Info(ctx context.Context, msg string, fields ...zap.Field) {
+func Info(ctx context.Context, msg string, fields ...field.Field) {
 	logger := fromContext(ctx)
 	logger.Info(msg, fields...)
 }
@@ -57,7 +57,7 @@ func Infof(ctx context.Context, template string, args ...any) {
 // Example:
 //
 //	xlog.Warn(ctx, "slow query", zap.Duration("took", time.Second*5))
-func Warn(ctx context.Context, msg string, fields ...zap.Field) {
+func Warn(ctx context.Context, msg string, fields ...field.Field) {
 	logger := fromContext(ctx)
 	logger.Warn(msg, fields...)
 }
@@ -79,7 +79,7 @@ func Warnf(ctx context.Context, template string, args ...any) {
 // Example:
 //
 //	xlog.Error(ctx, "database query error", zap.Error(err))
-func Error(ctx context.Context, msg string, fields ...zap.Field) {
+func Error(ctx context.Context, msg string, fields ...field.Field) {
 	logger := fromContext(ctx)
 	logger.Error(msg, fields...)
 }
@@ -102,7 +102,7 @@ func Errorf(ctx context.Context, template string, args ...any) {
 // Example:
 //
 //	xlog.Fatal(ctx, "critical error", zap.Error(err))
-func Fatal(ctx context.Context, msg string, fields ...zap.Field) {
+func Fatal(ctx context.Context, msg string, fields ...field.Field) {
 	logger := fromContext(ctx)
 	logger.Fatal(msg, fields...)
 }
@@ -125,7 +125,7 @@ func Fatalf(ctx context.Context, template string, args ...any) {
 // Example:
 //
 //	xlog.Panic(ctx, "unexpected state", zap.String("state", state))
-func Panic(ctx context.Context, msg string, fields ...zap.Field) {
+func Panic(ctx context.Context, msg string, fields ...field.Field) {
 	logger := fromContext(ctx)
 	logger.Panic(msg, fields...)
 }
