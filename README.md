@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ruko1202/xlog/actions/workflows/ci.yml/badge.svg)](https://github.com/ruko1202/xlog/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ruko1202/xlog)](https://goreportcard.com/report/github.com/ruko1202/xlog)
-![Coverage](https://img.shields.io/badge/Coverage-97.2%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-87.5%25-brightgreen)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ruko1202/xlog.svg)](https://pkg.go.dev/github.com/ruko1202/xlog)
 
 A wrapper around [zap](https://github.com/uber-go/zap) for context-aware logging.
