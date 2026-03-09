@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func setupTestTracer(t *testing.T) (*tracetest.SpanRecorder, trace.Tracer) {
+func setupTestTracer(t *testing.T) *tracetest.SpanRecorder {
 	t.Helper()
 
 	spanRecorder := tracetest.NewSpanRecorder()
@@ -27,13 +27,12 @@ func setupTestTracer(t *testing.T) (*tracetest.SpanRecorder, trace.Tracer) {
 	// Set as global tracer provider
 	otel.SetTracerProvider(tracerProvider)
 
-	tracer := tracerProvider.Tracer("test-tracer")
-	return spanRecorder, tracer
+	return spanRecorder
 }
 
 func TestWithOperationSpan(t *testing.T) {
 	t.Run("creates span and enriched logger", func(t *testing.T) {
-		spanRecorder, _ := setupTestTracer(t)
+		spanRecorder := setupTestTracer(t)
 		logger, logs := initTestLogger(t)
 
 		ctx := ContextWithLogger(context.Background(), logger)
@@ -61,7 +60,7 @@ func TestWithOperationSpan(t *testing.T) {
 	})
 
 	t.Run("adds fields to both logger and span", func(t *testing.T) {
-		spanRecorder, _ := setupTestTracer(t)
+		spanRecorder := setupTestTracer(t)
 		logger, logs := initTestLogger(t)
 
 		ctx := ContextWithLogger(context.Background(), logger)
@@ -112,7 +111,7 @@ func TestWithOperationSpan(t *testing.T) {
 	})
 
 	t.Run("nested spans create parent-child relationship", func(t *testing.T) {
-		spanRecorder, _ := setupTestTracer(t)
+		spanRecorder := setupTestTracer(t)
 		logger, _ := initTestLogger(t)
 
 		ctx := ContextWithLogger(context.Background(), logger)
@@ -122,7 +121,7 @@ func TestWithOperationSpan(t *testing.T) {
 		defer parentSpan.End()
 
 		// Child span
-		ctx, childSpan := WithOperationSpan(ctx, "child")
+		_, childSpan := WithOperationSpan(ctx, "child")
 		defer childSpan.End()
 
 		childSpan.End()
@@ -167,7 +166,7 @@ func TestSpanFromContext(t *testing.T) {
 
 func TestSetSpanAttributes(t *testing.T) {
 	t.Run("sets attributes on active span", func(t *testing.T) {
-		spanRecorder, _ := setupTestTracer(t)
+		spanRecorder := setupTestTracer(t)
 		ctx := context.Background()
 
 		ctx, span := WithOperationSpan(ctx, "test")
@@ -203,7 +202,7 @@ func TestSetSpanAttributes(t *testing.T) {
 
 func TestAddSpanEvent(t *testing.T) {
 	t.Run("adds event to active span", func(t *testing.T) {
-		spanRecorder, _ := setupTestTracer(t)
+		spanRecorder := setupTestTracer(t)
 		ctx := context.Background()
 
 		ctx, span := WithOperationSpan(ctx, "test")
@@ -235,7 +234,7 @@ func TestAddSpanEvent(t *testing.T) {
 
 func TestRecordSpanError(t *testing.T) {
 	t.Run("records error on active span", func(t *testing.T) {
-		spanRecorder, _ := setupTestTracer(t)
+		spanRecorder := setupTestTracer(t)
 		ctx := context.Background()
 
 		ctx, span := WithOperationSpan(ctx, "test")
@@ -363,7 +362,7 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 
 func TestTraceMetadataFields(t *testing.T) {
 	t.Run("adds trace_id and span_id when span is present", func(t *testing.T) {
-		spanRecorder, _ := setupTestTracer(t)
+		spanRecorder := setupTestTracer(t)
 		logger, logs := initTestLogger(t)
 		ctx := ContextWithLogger(context.Background(), logger)
 
@@ -418,7 +417,7 @@ func TestTraceMetadataFields(t *testing.T) {
 
 func TestMarkSpanError(t *testing.T) {
 	t.Run("marks span as error when error field is present", func(t *testing.T) {
-		spanRecorder, _ := setupTestTracer(t)
+		spanRecorder := setupTestTracer(t)
 		logger, logs := initTestLogger(t)
 		ctx := ContextWithLogger(context.Background(), logger)
 
@@ -442,7 +441,7 @@ func TestMarkSpanError(t *testing.T) {
 	})
 
 	t.Run("does not mark span as error without error field", func(t *testing.T) {
-		spanRecorder, _ := setupTestTracer(t)
+		spanRecorder := setupTestTracer(t)
 		logger, logs := initTestLogger(t)
 		ctx := ContextWithLogger(context.Background(), logger)
 

@@ -51,7 +51,7 @@ func TestTracerFromContext(t *testing.T) {
 		require.NotNil(t, extractedTracer, "should return global tracer, not nil")
 
 		// Verify it uses the global tracer provider
-		tracerName := _tracerName.Load().(string)
+		tracerName := getTracerName()
 		globalTracer := otel.GetTracerProvider().Tracer(tracerName)
 		assert.Equal(t, globalTracer, extractedTracer)
 	})
@@ -72,23 +72,25 @@ func TestTracerFromContext_Internal(t *testing.T) {
 
 func TestReplaceTracerName(t *testing.T) {
 	// Save original tracer name
-	originalName := _tracerName.Load().(string)
+	originalName := getTracerName()
 	t.Cleanup(func() {
 		// Restore original name after test
-		_tracerName.Store(originalName)
+		ReplaceTracerName(originalName)
 	})
 
 	t.Run("replaces tracer name", func(t *testing.T) {
 		newName := "my-custom-service"
-		ReplaceTracerName(newName)
+		restore := ReplaceTracerName(newName)
+		defer restore()
 
-		currentName := _tracerName.Load().(string)
+		currentName := getTracerName()
 		assert.Equal(t, newName, currentName)
 	})
 
 	t.Run("new tracer name is used by TracerFromContext", func(t *testing.T) {
 		newName := "test-service-name"
-		ReplaceTracerName(newName)
+		restore := ReplaceTracerName(newName)
+		defer restore()
 
 		ctx := context.Background()
 		// Don't add custom tracer, so it uses global with custom name
@@ -101,24 +103,39 @@ func TestReplaceTracerName(t *testing.T) {
 		globalTracer := otel.GetTracerProvider().Tracer(newName)
 		assert.Equal(t, globalTracer, tracer)
 	})
+
+	t.Run("restore function works", func(t *testing.T) {
+		original := getTracerName()
+
+		// Change name
+		restore := ReplaceTracerName("temporary-name")
+
+		assert.Equal(t, "temporary-name", getTracerName())
+
+		// Restore
+		restore()
+
+		assert.Equal(t, original, getTracerName())
+	})
 }
 
 func TestReplaceTracerName_Concurrent(t *testing.T) {
 	// Save original tracer name
-	originalName := _tracerName.Load().(string)
+	originalName := getTracerName()
 	t.Cleanup(func() {
-		_tracerName.Store(originalName)
+		ReplaceTracerName(originalName)
 	})
 
 	// This test should be run with -race flag to detect race conditions
-	t.Run("concurrent access is safe", func(t *testing.T) {
+	t.Run("concurrent access is safe", func(_ *testing.T) {
 		done := make(chan bool)
 		ctx := context.Background()
 
 		// Writer goroutine - changes tracer name
 		go func() {
 			for i := 0; i < 100; i++ {
-				ReplaceTracerName("writer-tracer")
+				restore := ReplaceTracerName("writer-tracer")
+				restore()
 			}
 			done <- true
 		}()
@@ -142,13 +159,66 @@ func TestContextWithTracer_NilContext(t *testing.T) {
 	tracer := noop.NewTracerProvider().Tracer("test")
 
 	assert.Panics(t, func() {
-		_ = ContextWithTracer(nil, tracer)
+		_ = ContextWithTracer(nil, tracer) //nolint:staticcheck // Intentionally testing nil context behavior
 	}, "should panic when context is nil")
 }
 
 func TestTracerFromContext_NilContext(t *testing.T) {
 	// This should panic according to context.Value documentation
 	assert.Panics(t, func() {
-		_ = TracerFromContext(nil)
+		_ = TracerFromContext(nil) //nolint:staticcheck // Intentionally testing nil context behavior
 	}, "should panic when context is nil")
+}
+
+func TestReplaceTracerName_Validation(t *testing.T) {
+	// Save original
+	originalName := getTracerName()
+	t.Cleanup(func() {
+		ReplaceTracerName(originalName)
+	})
+
+	t.Run("ignores empty tracer name", func(t *testing.T) {
+		restore := ReplaceTracerName("test-name")
+		defer restore()
+
+		currentName := getTracerName()
+		assert.Equal(t, "test-name", currentName)
+
+		// Empty name should be ignored
+		restoreEmpty := ReplaceTracerName("")
+		defer restoreEmpty()
+
+		currentName = getTracerName()
+		assert.Equal(t, "test-name", currentName, "empty name should not replace existing name")
+	})
+
+	t.Run("accepts valid tracer name", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			restore := ReplaceTracerName("valid-tracer-name")
+			defer restore()
+		})
+	})
+}
+
+func TestContextWithTracer_Validation(t *testing.T) {
+	t.Run("creates global tracer when tracer is nil", func(t *testing.T) {
+		ctx := context.Background()
+
+		// Should not panic, but use global tracer provider
+		assert.NotPanics(t, func() {
+			newCtx := ContextWithTracer(ctx, nil)
+
+			// Verify tracer was added from global provider
+			tracer := newCtx.Value(tracerCtxKey).(trace.Tracer)
+			require.NotNil(t, tracer)
+		})
+	})
+
+	t.Run("panics when context is nil", func(t *testing.T) {
+		tracer := noop.NewTracerProvider().Tracer("test")
+
+		assert.Panics(t, func() {
+			ContextWithTracer(nil, tracer) //nolint:staticcheck // Intentionally testing nil context behavior
+		}, "should panic when context is nil")
+	})
 }

@@ -23,6 +23,9 @@ const (
 //	logger, _ := zap.NewProduction()
 //	ctx := xlog.ContextWithLogger(context.Background(), logger)
 func ContextWithLogger(ctx context.Context, logger *zap.Logger) context.Context {
+	if logger == nil {
+		logger = zap.L()
+	}
 	return context.WithValue(ctx, loggerCtxKey, logger)
 }
 
