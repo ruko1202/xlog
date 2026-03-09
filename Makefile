@@ -45,7 +45,7 @@ deps:
 #   - golangci-lint: comprehensive Go linter
 .PHONY: bin-deps
 bin-deps:
-	GOBIN=$(GOBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.0
+	GOBIN=$(GOBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.2
 
 # -------------------------------------
 # Tests
