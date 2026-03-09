@@ -2,7 +2,7 @@ package xlog
 
 import (
 	"context"
-	"sync"
+	"sync/atomic"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
@@ -15,18 +15,19 @@ const (
 )
 
 var (
-	_tracerMu   sync.Mutex
-	_tracerName = "github.com/ruko1202/xlog"
+	_tracerName atomic.Value
 )
+
+func init() {
+	_tracerName.Store("github.com/ruko1202/xlog")
+}
 
 // ReplaceTracerName sets the global tracer name used when creating new tracers.
 // This should be called during application initialization before any tracing operations.
 // The default tracer name is "github.com/ruko1202/xlog".
+// This function is thread-safe and can be called concurrently.
 func ReplaceTracerName(tracerName string) {
-	_tracerMu.Lock()
-	defer _tracerMu.Unlock()
-
-	_tracerName = tracerName
+	_tracerName.Store(tracerName)
 }
 
 // ContextWithTracer returns a new context with the provided tracer attached.
@@ -42,9 +43,10 @@ func TracerFromContext(ctx context.Context) trace.Tracer {
 }
 
 func tracerFromContext(ctx context.Context) trace.Tracer {
-	tracer, ok := ctx.Value(loggerCtxKey).(trace.Tracer)
+	tracer, ok := ctx.Value(tracerCtxKey).(trace.Tracer)
 	if !ok {
-		return otel.GetTracerProvider().Tracer(_tracerName)
+		tracerName := _tracerName.Load().(string)
+		return otel.GetTracerProvider().Tracer(tracerName)
 	}
 
 	return tracer

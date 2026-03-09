@@ -71,6 +71,22 @@ func RecordSpanError(ctx context.Context, err error, options ...trace.EventOptio
 	}
 }
 
+// convertFieldsToAttributes converts zap fields to OpenTelemetry attributes.
+//
+// Supported field types:
+//   - String (zapcore.StringType)
+//   - Integer types (Int64, Int32, Int16, Int8, Uint64, Uint32, Uint16, Uint8)
+//   - Bool (zapcore.BoolType)
+//   - Float types (Float64, Float32)
+//
+// Unsupported types (Any, Array, Object, Binary, etc.) are silently ignored.
+// This is intentional to avoid exceeding OpenTelemetry attribute size limits
+// and to prevent performance issues with complex data structures.
+//
+// If you need to include complex types as span attributes, consider:
+//   - Converting them to strings manually before passing to WithOperationSpan
+//   - Using SetSpanAttributes with pre-converted attribute.KeyValue
+//   - Logging the full data separately and only adding a reference ID to the span
 func convertFieldsToAttributes(fields []zap.Field) []attribute.KeyValue {
 	if len(fields) == 0 {
 		return nil
@@ -97,9 +113,8 @@ func convertFieldsToAttributes(fields []zap.Field) []attribute.KeyValue {
 			attrs = append(attrs, attribute.Float64(f.Key, math.Float64frombits(uint64(f.Integer))))
 
 		default:
-			// For complex structures, arrays, and objects (zap.Any)
-			// It's safest to ignore them for traces (to avoid hitting OTel limits),
-			// or convert to string via fmt.Sprintf (at your own risk)
+			// Unsupported types are silently ignored.
+			// See function documentation for details.
 		}
 	}
 
