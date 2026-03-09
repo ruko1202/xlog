@@ -92,7 +92,19 @@ func convertFieldsToAttributes(fields []zap.Field) []attribute.KeyValue {
 		return nil
 	}
 
-	attrs := make([]attribute.KeyValue, 0, len(fields))
+	// Pre-count supported fields to allocate exact capacity
+	count := 0
+	for _, f := range fields {
+		if isSupportedFieldType(f.Type) {
+			count++
+		}
+	}
+
+	if count == 0 {
+		return nil
+	}
+
+	attrs := make([]attribute.KeyValue, 0, count)
 	for _, f := range fields {
 		switch f.Type {
 		case zapcore.StringType:
@@ -119,4 +131,18 @@ func convertFieldsToAttributes(fields []zap.Field) []attribute.KeyValue {
 	}
 
 	return attrs
+}
+
+// isSupportedFieldType checks if a zap field type is supported for conversion to OTel attributes.
+func isSupportedFieldType(t zapcore.FieldType) bool {
+	switch t {
+	case zapcore.StringType,
+		zapcore.Int64Type, zapcore.Int32Type, zapcore.Int16Type, zapcore.Int8Type,
+		zapcore.Uint64Type, zapcore.Uint32Type, zapcore.Uint16Type, zapcore.Uint8Type,
+		zapcore.BoolType,
+		zapcore.Float64Type, zapcore.Float32Type:
+		return true
+	default:
+		return false
+	}
 }
