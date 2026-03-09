@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Debug logs a Debug level message with structured fields.
@@ -56,6 +59,8 @@ func Infof(ctx context.Context, template string, args ...any) {
 //
 //	xlog.Warn(ctx, "slow query", zap.Duration("took", time.Second*5))
 func Warn(ctx context.Context, msg string, fields ...zap.Field) {
+	markSpanError(ctx, msg, fields)
+
 	logger := loggerFromContext(ctx)
 	logger.Warn(msg, withMetadataFields(ctx, fields)...)
 }
@@ -77,6 +82,8 @@ func Warnf(ctx context.Context, template string, args ...any) {
 //
 //	xlog.Error(ctx, "database query error", zap.Error(err))
 func Error(ctx context.Context, msg string, fields ...zap.Field) {
+	markSpanError(ctx, msg, fields)
+
 	logger := loggerFromContext(ctx)
 	logger.Error(msg, withMetadataFields(ctx, fields)...)
 }
@@ -99,6 +106,8 @@ func Errorf(ctx context.Context, template string, args ...any) {
 //
 //	xlog.Fatal(ctx, "critical error", zap.Error(err))
 func Fatal(ctx context.Context, msg string, fields ...zap.Field) {
+	markSpanError(ctx, msg, fields)
+
 	logger := loggerFromContext(ctx)
 	logger.Fatal(msg, withMetadataFields(ctx, fields)...)
 }
@@ -121,6 +130,8 @@ func Fatalf(ctx context.Context, template string, args ...any) {
 //
 //	xlog.Panic(ctx, "unexpected state", zap.String("state", state))
 func Panic(ctx context.Context, msg string, fields ...zap.Field) {
+	markSpanError(ctx, msg, fields)
+
 	logger := loggerFromContext(ctx)
 	logger.Panic(msg, withMetadataFields(ctx, fields)...)
 }
@@ -138,6 +149,7 @@ func Panicf(ctx context.Context, template string, args ...any) {
 func withMetadataFields(ctx context.Context, fields []zap.Field) []zap.Field {
 	slices := [][]zap.Field{
 		fields,
+		traceMetadataFields(ctx),
 	}
 
 	totalLen := 0
@@ -151,4 +163,33 @@ func withMetadataFields(ctx context.Context, fields []zap.Field) []zap.Field {
 	}
 
 	return result
+}
+
+func traceMetadataFields(ctx context.Context) []zap.Field {
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.HasTraceID() {
+		return []zap.Field{
+			zap.String("trace_id", spanCtx.TraceID().String()),
+			zap.String("span_id", spanCtx.SpanID().String()),
+		}
+	}
+
+	return nil
+}
+
+func markSpanError(ctx context.Context, msg string, fields []zap.Field) {
+	span := SpanFromContext(ctx)
+	if span.IsRecording() {
+		for _, f := range fields {
+			if f.Type == zapcore.ErrorType {
+				if err, ok := f.Interface.(error); ok && err != nil {
+					span.SetStatus(codes.Error, msg)
+					span.RecordError(err,
+						trace.WithStackTrace(true),
+					)
+					break
+				}
+			}
+		}
+	}
 }
