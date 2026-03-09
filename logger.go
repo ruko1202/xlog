@@ -14,8 +14,8 @@ import (
 //
 //	xlog.Debug(ctx, "debug message", zap.String("key", "value"))
 func Debug(ctx context.Context, msg string, fields ...zap.Field) {
-	logger := fromContext(ctx)
-	logger.Debug(msg, fields...)
+	logger := loggerFromContext(ctx)
+	logger.Debug(msg, withMetadataFields(ctx, fields)...)
 }
 
 // Debugf logs a formatted Debug level message.
@@ -25,8 +25,7 @@ func Debug(ctx context.Context, msg string, fields ...zap.Field) {
 //
 //	xlog.Debugf(ctx, "value: %d, status: %s", 42, "ok")
 func Debugf(ctx context.Context, template string, args ...any) {
-	logger := fromContext(ctx)
-	logger.Debug(fmt.Sprintf(template, args...))
+	Debug(ctx, fmt.Sprintf(template, args...))
 }
 
 // Info logs an Info level message with structured fields.
@@ -36,8 +35,8 @@ func Debugf(ctx context.Context, template string, args ...any) {
 //
 //	xlog.Info(ctx, "request processed", zap.Duration("took", time.Second))
 func Info(ctx context.Context, msg string, fields ...zap.Field) {
-	logger := fromContext(ctx)
-	logger.Info(msg, fields...)
+	logger := loggerFromContext(ctx)
+	logger.Info(msg, withMetadataFields(ctx, fields)...)
 }
 
 // Infof logs a formatted Info level message.
@@ -47,8 +46,7 @@ func Info(ctx context.Context, msg string, fields ...zap.Field) {
 //
 //	xlog.Infof(ctx, "user %s logged in", userID)
 func Infof(ctx context.Context, template string, args ...any) {
-	logger := fromContext(ctx)
-	logger.Info(fmt.Sprintf(template, args...))
+	Info(ctx, fmt.Sprintf(template, args...))
 }
 
 // Warn logs a Warn level message with structured fields.
@@ -58,8 +56,8 @@ func Infof(ctx context.Context, template string, args ...any) {
 //
 //	xlog.Warn(ctx, "slow query", zap.Duration("took", time.Second*5))
 func Warn(ctx context.Context, msg string, fields ...zap.Field) {
-	logger := fromContext(ctx)
-	logger.Warn(msg, fields...)
+	logger := loggerFromContext(ctx)
+	logger.Warn(msg, withMetadataFields(ctx, fields)...)
 }
 
 // Warnf logs a formatted Warn level message.
@@ -69,8 +67,7 @@ func Warn(ctx context.Context, msg string, fields ...zap.Field) {
 //
 //	xlog.Warnf(ctx, "retry attempts: %d", retryCount)
 func Warnf(ctx context.Context, template string, args ...any) {
-	logger := fromContext(ctx)
-	logger.Warn(fmt.Sprintf(template, args...))
+	Warn(ctx, fmt.Sprintf(template, args...))
 }
 
 // Error logs an Error level message with structured fields.
@@ -80,8 +77,8 @@ func Warnf(ctx context.Context, template string, args ...any) {
 //
 //	xlog.Error(ctx, "database query error", zap.Error(err))
 func Error(ctx context.Context, msg string, fields ...zap.Field) {
-	logger := fromContext(ctx)
-	logger.Error(msg, fields...)
+	logger := loggerFromContext(ctx)
+	logger.Error(msg, withMetadataFields(ctx, fields)...)
 }
 
 // Errorf logs a formatted Error level message.
@@ -91,8 +88,7 @@ func Error(ctx context.Context, msg string, fields ...zap.Field) {
 //
 //	xlog.Errorf(ctx, "failed to process request: %v", err)
 func Errorf(ctx context.Context, template string, args ...any) {
-	logger := fromContext(ctx)
-	logger.Error(fmt.Sprintf(template, args...))
+	Error(ctx, fmt.Sprintf(template, args...))
 }
 
 // Fatal logs a Fatal level message with structured fields and terminates the program.
@@ -103,8 +99,8 @@ func Errorf(ctx context.Context, template string, args ...any) {
 //
 //	xlog.Fatal(ctx, "critical error", zap.Error(err))
 func Fatal(ctx context.Context, msg string, fields ...zap.Field) {
-	logger := fromContext(ctx)
-	logger.Fatal(msg, fields...)
+	logger := loggerFromContext(ctx)
+	logger.Fatal(msg, withMetadataFields(ctx, fields)...)
 }
 
 // Fatalf logs a formatted Fatal level message and terminates the program.
@@ -115,8 +111,7 @@ func Fatal(ctx context.Context, msg string, fields ...zap.Field) {
 //
 //	xlog.Fatalf(ctx, "failed to start server: %v", err)
 func Fatalf(ctx context.Context, template string, args ...any) {
-	logger := fromContext(ctx)
-	logger.Fatal(fmt.Sprintf(template, args...))
+	Fatal(ctx, fmt.Sprintf(template, args...))
 }
 
 // Panic logs a Panic level message with structured fields and panics.
@@ -126,8 +121,8 @@ func Fatalf(ctx context.Context, template string, args ...any) {
 //
 //	xlog.Panic(ctx, "unexpected state", zap.String("state", state))
 func Panic(ctx context.Context, msg string, fields ...zap.Field) {
-	logger := fromContext(ctx)
-	logger.Panic(msg, fields...)
+	logger := loggerFromContext(ctx)
+	logger.Panic(msg, withMetadataFields(ctx, fields)...)
 }
 
 // Panicf logs a formatted Panic level message and panics.
@@ -137,6 +132,23 @@ func Panic(ctx context.Context, msg string, fields ...zap.Field) {
 //
 //	xlog.Panicf(ctx, "invalid value: %v", value)
 func Panicf(ctx context.Context, template string, args ...any) {
-	logger := fromContext(ctx)
-	logger.Panic(fmt.Sprintf(template, args...))
+	Panic(ctx, fmt.Sprintf(template, args...))
+}
+
+func withMetadataFields(ctx context.Context, fields []zap.Field) []zap.Field {
+	slices := [][]zap.Field{
+		fields,
+	}
+
+	totalLen := 0
+	for _, s := range slices {
+		totalLen += len(s)
+	}
+
+	result := make([]zap.Field, 0, totalLen)
+	for _, s := range slices {
+		result = append(result, s...)
+	}
+
+	return result
 }

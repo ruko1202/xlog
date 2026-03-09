@@ -17,7 +17,7 @@ func main() {
 		panic(err)
 	}
 
-	xlog.ReplaceGlobal(logger)
+	zap.ReplaceGlobals(logger)
 	ctx := xlog.ContextWithLogger(context.Background(), logger)
 
 	runApp(ctx)

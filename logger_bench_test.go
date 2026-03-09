@@ -30,32 +30,56 @@ func BenchmarkAdvance_WithOperation(b *testing.B) {
 
 	b.Run("zap", func(b *testing.B) {
 		logger := zap.NewNop()
-		b.Run("with operation name", func(b *testing.B) {
+		b.Run("create logger in loop/with operation name", func(b *testing.B) {
 			withBenchedLogger(b, func() {
 				logger.Named("xlog operation").
 					Info("hello world")
 			})
 		})
-		b.Run("with operation name and fields", func(b *testing.B) {
+		b.Run("create logger in loop/with operation name and fields", func(b *testing.B) {
 			withBenchedLogger(b, func() {
 				logger.Named("xlog operation").
 					With(zap.String("key", "value")).
 					Info("hello world")
 			})
 		})
+		b.Run("reuse logger/with operation name", func(b *testing.B) {
+			logger := logger.Named("xlog operation")
+			withBenchedLogger(b, func() {
+				logger.Info("hello world")
+			})
+		})
+		b.Run("reuse logger/with operation name and fields", func(b *testing.B) {
+			logger := logger.Named("xlog operation").With(zap.String("key", "value"))
+			withBenchedLogger(b, func() {
+				logger.Info("hello world")
+			})
+		})
 	})
 
 	b.Run("xlog", func(b *testing.B) {
 		ctx = ContextWithLogger(ctx, zap.NewNop())
-		b.Run("with operation name", func(b *testing.B) {
+		b.Run("create context in loop/with operation name", func(b *testing.B) {
 			withBenchedLogger(b, func() {
-				ctx = WithOperation(ctx, "xlog operation")
+				ctx := WithOperation(ctx, "xlog operation")
 				Info(ctx, "hello world")
 			})
 		})
-		b.Run("with operation name and fields", func(b *testing.B) {
+		b.Run("create context in loop/with operation name and fields", func(b *testing.B) {
 			withBenchedLogger(b, func() {
-				ctx = WithOperation(ctx, "xlog operation", zap.String("key", "value"))
+				ctx := WithOperation(ctx, "xlog operation", zap.String("key", "value"))
+				Info(ctx, "hello world")
+			})
+		})
+		b.Run("reuse context/with operation name", func(b *testing.B) {
+			ctx := WithOperation(ctx, "xlog operation")
+			withBenchedLogger(b, func() {
+				Info(ctx, "hello world")
+			})
+		})
+		b.Run("reuse context/with operation name and fields", func(b *testing.B) {
+			ctx := WithOperation(ctx, "xlog operation", zap.String("key", "value"))
+			withBenchedLogger(b, func() {
 				Info(ctx, "hello world")
 			})
 		})
@@ -66,18 +90,34 @@ func BenchmarkAdvance_WithFields(b *testing.B) {
 
 	b.Run("zap", func(b *testing.B) {
 		logger := zap.NewNop()
-		withBenchedLogger(b, func() {
-			logger.
-				With(zap.String("key", "value")).
-				Info("hello world")
+		b.Run("create logger in loop", func(b *testing.B) {
+			withBenchedLogger(b, func() {
+				logger.
+					With(zap.String("key", "value")).
+					Info("hello world")
+			})
+		})
+		b.Run("reuse logger", func(b *testing.B) {
+			logger := logger.With(zap.String("key", "value"))
+			withBenchedLogger(b, func() {
+				logger.Info("hello world")
+			})
 		})
 	})
 
 	b.Run("xlog", func(b *testing.B) {
 		ctx = ContextWithLogger(ctx, zap.NewNop())
-		withBenchedLogger(b, func() {
-			ctx = WithFields(ctx, zap.String("key", "value"))
-			Info(ctx, "hello world")
+		b.Run("create context in loop", func(b *testing.B) {
+			withBenchedLogger(b, func() {
+				ctx := WithFields(ctx, zap.String("key", "value"))
+				Info(ctx, "hello world")
+			})
+		})
+		b.Run("reuse context", func(b *testing.B) {
+			ctx := WithFields(ctx, zap.String("key", "value"))
+			withBenchedLogger(b, func() {
+				Info(ctx, "hello world")
+			})
 		})
 	})
 }
