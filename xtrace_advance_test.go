@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func setupTestTracer(t *testing.T) *tracetest.SpanRecorder {
@@ -329,6 +330,16 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 		assert.Nil(t, attrs)
 	})
 
+	t.Run("returns nil when all fields are unsupported", func(t *testing.T) {
+		fields := []zap.Field{
+			zap.Any("any1", map[string]string{"key": "value"}),
+			zap.Any("any2", []string{"a", "b", "c"}),
+		}
+
+		attrs := convertFieldsToAttributes(fields)
+		assert.Nil(t, attrs)
+	})
+
 	t.Run("ignores complex types", func(t *testing.T) {
 		fields := []zap.Field{
 			zap.String("string", "value"),
@@ -411,6 +422,45 @@ func TestTraceMetadataFields(t *testing.T) {
 		for _, field := range entry.Context {
 			assert.NotEqual(t, "trace_id", field.Key)
 			assert.NotEqual(t, "span_id", field.Key)
+		}
+	})
+}
+
+func TestIsSupportedFieldType(t *testing.T) {
+	t.Run("supported types", func(t *testing.T) {
+		supportedTypes := []zapcore.FieldType{
+			zapcore.StringType,
+			zapcore.Int64Type, zapcore.Int32Type, zapcore.Int16Type, zapcore.Int8Type,
+			zapcore.Uint64Type, zapcore.Uint32Type, zapcore.Uint16Type, zapcore.Uint8Type,
+			zapcore.BoolType,
+			zapcore.Float64Type, zapcore.Float32Type,
+		}
+
+		for _, ft := range supportedTypes {
+			assert.True(t, isSupportedFieldType(ft), "type %v should be supported", ft)
+		}
+	})
+
+	t.Run("unsupported types", func(t *testing.T) {
+		unsupportedTypes := []zapcore.FieldType{
+			zapcore.ArrayMarshalerType,
+			zapcore.ObjectMarshalerType,
+			zapcore.BinaryType,
+			zapcore.ByteStringType,
+			zapcore.Complex64Type,
+			zapcore.Complex128Type,
+			zapcore.DurationType,
+			zapcore.TimeType,
+			zapcore.TimeFullType,
+			zapcore.ErrorType,
+			zapcore.ReflectType,
+			zapcore.NamespaceType,
+			zapcore.StringerType,
+			zapcore.SkipType,
+		}
+
+		for _, ft := range unsupportedTypes {
+			assert.False(t, isSupportedFieldType(ft), "type %v should NOT be supported", ft)
 		}
 	})
 }
