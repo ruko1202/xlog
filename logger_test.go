@@ -71,7 +71,8 @@ func testLogger(t *testing.T, level zapcore.Level, calls *loggerCalls) {
 
 func TestUseGlobalLogger(t *testing.T) {
 	logger, logs := initTestLogger(t)
-	returnToPrev := ReplaceGlobal(logger)
+
+	returnToPrev := zap.ReplaceGlobals(logger)
 	t.Cleanup(returnToPrev)
 
 	ctx := context.Background()

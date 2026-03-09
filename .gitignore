@@ -12,3 +12,9 @@ mem.pprof
 cpu.pprof
 
 xlog.test
+
+bench_results.txt
+
+*.prof
+
+benchmark_analysis.md
