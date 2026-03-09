@@ -15,6 +15,8 @@ A wrapper around [zap](https://github.com/uber-go/zap) for context-aware logging
 - Printf-style formatting (Debugf, Infof, etc.)
 - All logging levels: Debug, Info, Warn, Error, Fatal, Panic
 - Zero allocation when logger is not in context (uses zap.NewNop())
+- **OpenTelemetry integration** - span management with automatic logger enrichment
+- Distributed tracing support with span creation, events, and attributes
 
 ## Installation
 
@@ -24,7 +26,7 @@ go get github.com/ruko1202/xlog
 
 ## Quick Start
 
-For a complete working example, see [example/http](example/http/main.go).
+For a complete working example, see [example/app](example/app/main.go).
 
 ### Basic Usage
 
@@ -170,6 +172,77 @@ xlog.Debug(ctx, "processing request")
 
 **Performance**: Better than `WithOperation` but still creates new logger instances. For single log statements, passing fields directly is most efficient.
 
+### Span Management Functions
+
+xlog provides integration with OpenTelemetry for distributed tracing. These functions help manage spans alongside logging.
+
+#### `ReplaceTracerName(name string)`
+
+Sets the global tracer name for creating spans. Call this once during application initialization.
+
+```go
+xlog.ReplaceTracerName("my-service")
+```
+
+#### `WithOperationSpan(ctx context.Context, operation string, fields ...zap.Field) (context.Context, trace.Span)`
+
+Creates a new span for an operation and adds it to the context along with an enriched logger. The logger automatically includes the operation name and any additional fields.
+
+```go
+ctx, span := xlog.WithOperationSpan(ctx, "process-payment",
+    zap.String("user_id", "12345"),
+    zap.String("payment_id", "pay_xyz"),
+)
+defer span.End()
+
+xlog.Info(ctx, "processing payment") // Includes operation and fields
+```
+
+**Returns:**
+- New context with span and enriched logger
+- Span instance that should be ended with `defer span.End()`
+
+**Usage pattern:**
+```go
+func handleRequest(ctx context.Context) error {
+    ctx, span := xlog.WithOperationSpan(ctx, "handleRequest")
+    defer span.End()
+
+    // All logs in this context will include the operation name
+    xlog.Info(ctx, "request started")
+
+    // ...
+
+    return nil
+}
+```
+
+#### `AddSpanEvent(ctx context.Context, message string)`
+
+Adds an event to the current span (if present in context). Useful for marking important moments in trace execution.
+
+```go
+xlog.AddSpanEvent(ctx, "database query started")
+// ... perform database query ...
+xlog.AddSpanEvent(ctx, "database query completed")
+```
+
+#### `SetSpanAttributes(ctx context.Context, attrs ...attribute.KeyValue)`
+
+Sets attributes on the current span (if present in context). Use OpenTelemetry attribute types.
+
+```go
+import "go.opentelemetry.io/otel/attribute"
+
+xlog.SetSpanAttributes(ctx,
+    attribute.String("user.id", "12345"),
+    attribute.Int("user.age", 25),
+    attribute.Bool("user.premium", true),
+)
+```
+
+**Note:** All span functions work safely even when no span is present in context (no-op behavior).
+
 ### Logging Functions
 
 All logging functions require `context.Context` as the first argument.
@@ -208,6 +281,47 @@ Functions with string formatting:
 userID := "12345"
 xlog.Infof(ctx, "user %s logged in", userID)
 xlog.Errorf(ctx, "request processing error: code %d", 500)
+```
+
+## Complete Example
+
+The [example/app](example/app/) directory contains a complete working application demonstrating xlog integration with OpenTelemetry, distributed tracing, and metrics:
+
+**Structure:**
+- `main.go` - Application setup, Echo server, OpenTelemetry initialization
+- `http_handler.go` - HTTP handlers with span creation and logging
+- `otel.go` - OpenTelemetry configuration (traces via gRPC, metrics via Prometheus)
+- `worker.go` - Background worker simulating HTTP requests
+- `compose.yml` - Docker Compose setup with Jaeger, Prometheus, and Grafana
+- `otel-collector-config.yaml` - OpenTelemetry Collector configuration
+
+**Features demonstrated:**
+- Context-aware logging with automatic trace ID injection
+- Integration with Echo web framework
+- OpenTelemetry spans with `xlog.WithOperationSpan()`
+- Distributed tracing with Jaeger
+- Prometheus metrics collection
+- Trace ID propagation in HTTP headers (X-Request-ID)
+- Background workers with proper context handling
+
+**Running the example:**
+
+```bash
+cd example
+
+# Start infrastructure (Jaeger, Prometheus, Grafana, OTel Collector)
+docker compose up -d
+
+# Run the application
+go run app/*.go
+
+# Test the API
+curl http://localhost:8080/api/work?user_id=123
+curl http://localhost:8080/api/work?user_id=456&fail=true
+
+# View traces: http://localhost:16686 (Jaeger UI)
+# View metrics: http://localhost:9090 (Prometheus)
+# View dashboards: http://localhost:3000 (Grafana, admin/admin)
 ```
 
 ## Usage Examples
@@ -270,7 +384,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-See [example/http](example/http/main.go) for a complete working example.
+See [example/app](example/app/main.go) for a complete working example.
 
 ### Database Operations
 
@@ -401,4 +515,5 @@ MIT
 ## Dependencies
 
 - [go.uber.org/zap](https://github.com/uber-go/zap) - underlying logger
+- [go.opentelemetry.io/otel](https://github.com/open-telemetry/opentelemetry-go) - OpenTelemetry tracing
 - [github.com/stretchr/testify](https://github.com/stretchr/testify) - for testing
