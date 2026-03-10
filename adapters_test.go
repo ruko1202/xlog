@@ -2,13 +2,13 @@ package xlog
 
 import (
 	"errors"
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -30,47 +30,6 @@ type logEntry struct {
 
 type logObserver func() []*logEntry
 
-func initZapAdapter(t *testing.T) (Logger, logObserver) {
-	t.Helper()
-	logger, zapObservedLogs := initZapTestLogger(t)
-
-	return NewZapAdapter(logger), func() []*logEntry {
-		zapEntries := zapObservedLogs.All()
-
-		entries := make([]*logEntry, 0, len(zapEntries))
-		for _, e := range zapEntries {
-			entries = append(entries, &logEntry{
-				Level:      mapZapLevel(e.Level),
-				Message:    e.Message,
-				Time:       e.Time,
-				LoggerName: e.LoggerName,
-				ContextMap: e.ContextMap(),
-			})
-		}
-
-		return entries
-	}
-}
-
-func mapZapLevel(level zapcore.Level) int {
-	switch level {
-	case zapcore.DebugLevel:
-		return debugLevel
-	case zapcore.InfoLevel:
-		return infoLevel
-	case zapcore.WarnLevel:
-		return warnLevel
-	case zapcore.ErrorLevel:
-		return errorLevel
-	case zapcore.PanicLevel:
-		return panicLevel
-	case zapcore.FatalLevel:
-		return fatalLevel
-	default:
-		return infoLevel
-	}
-}
-
 func TestAdapters(t *testing.T) {
 	t.Run("zap", func(t *testing.T) {
 		testAdapter(t, initZapAdapter)
@@ -78,6 +37,18 @@ func TestAdapters(t *testing.T) {
 		t.Run("Unwrap returns underlying logger", func(t *testing.T) {
 			logger := zap.NewNop()
 			adapter := NewZapAdapter(logger).(*ZapAdapter)
+
+			unwrapped := adapter.Unwrap()
+			assert.Equal(t, logger, unwrapped)
+		})
+	})
+
+	t.Run("slog", func(t *testing.T) {
+		testAdapter(t, initSlogAdapter)
+
+		t.Run("Unwrap returns underlying logger", func(t *testing.T) {
+			logger := slog.Default()
+			adapter := NewSlogAdapter(logger).(*SlogAdapter)
 
 			unwrapped := adapter.Unwrap()
 			assert.Equal(t, logger, unwrapped)

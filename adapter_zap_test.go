@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap/zapcore"
 )
 
 func TestFieldToZapField(t *testing.T) {
@@ -89,4 +90,45 @@ func TestFieldToZapField(t *testing.T) {
 			})
 		}
 	})
+}
+
+func initZapAdapter(t *testing.T) (Logger, logObserver) {
+	t.Helper()
+	logger, zapObservedLogs := initZapTestLogger(t)
+
+	return NewZapAdapter(logger), func() []*logEntry {
+		zapEntries := zapObservedLogs.All()
+
+		entries := make([]*logEntry, 0, len(zapEntries))
+		for _, e := range zapEntries {
+			entries = append(entries, &logEntry{
+				Level:      mapZapLevel(e.Level),
+				Message:    e.Message,
+				Time:       e.Time,
+				LoggerName: e.LoggerName,
+				ContextMap: e.ContextMap(),
+			})
+		}
+
+		return entries
+	}
+}
+
+func mapZapLevel(level zapcore.Level) int {
+	switch level {
+	case zapcore.DebugLevel:
+		return debugLevel
+	case zapcore.InfoLevel:
+		return infoLevel
+	case zapcore.WarnLevel:
+		return warnLevel
+	case zapcore.ErrorLevel:
+		return errorLevel
+	case zapcore.PanicLevel:
+		return panicLevel
+	case zapcore.FatalLevel:
+		return fatalLevel
+	default:
+		return infoLevel
+	}
 }
