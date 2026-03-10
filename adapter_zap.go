@@ -89,6 +89,8 @@ func fieldsToZapFields(fields []Field) []zap.Field {
 }
 
 // fieldToZapField converts a single xlog.Field to zap.Field.
+//
+//nolint:gocyclo,funlen // switch on field types requires many cases
 func fieldToZapField(f Field) zap.Field {
 	switch f.Type {
 	case StringType:
@@ -98,6 +100,7 @@ func fieldToZapField(f Field) zap.Field {
 		return zap.Int64(f.Key, f.Integer)
 
 	case Uint64Type:
+		// #nosec G115 - safe conversion as Uint64 values are stored as int64
 		return zap.Uint64(f.Key, uint64(f.Integer))
 
 	case Float64Type:

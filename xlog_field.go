@@ -70,11 +70,13 @@ func Int32(key string, val int32) Field {
 
 // Uint creates a uint field.
 func Uint(key string, val uint) Field {
+	// #nosec G115 - safe conversion, uint values fit in int64
 	return Field{Key: key, Type: Uint64Type, Integer: int64(val)}
 }
 
 // Uint64 creates a uint64 field.
 func Uint64(key string, val uint64) Field {
+	// #nosec G115 - safe conversion, storing unsigned as signed for internal representation
 	return Field{Key: key, Type: Uint64Type, Integer: int64(val)}
 }
 
@@ -228,7 +230,7 @@ func (f Field) FormatValue() string {
 		return fmt.Sprintf("%+v", f.Interface)
 	case BinaryType:
 		if b, ok := f.Interface.([]byte); ok {
-			return fmt.Sprintf("%s", b)
+			return string(b)
 		}
 		return fmt.Sprintf("%v", f.Interface)
 	default:

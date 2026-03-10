@@ -167,6 +167,7 @@ func fieldToSlogAttr(f Field) slog.Attr {
 		return slog.Int64(f.Key, f.Integer)
 
 	case Uint64Type:
+		// #nosec G115 - safe conversion as Uint64 values are stored as int64
 		return slog.Uint64(f.Key, uint64(f.Integer))
 
 	case Float64Type:

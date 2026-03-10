@@ -57,6 +57,8 @@ func TestAdapters(t *testing.T) {
 }
 
 func testAdapter(t *testing.T, initAdapter func(t *testing.T) (Logger, logObserver)) {
+	t.Helper()
+
 	t.Run("NewZapAdapter with nil logger", func(t *testing.T) {
 		adapter := NewZapAdapter(nil)
 		assert.NotNil(t, adapter)

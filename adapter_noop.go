@@ -9,12 +9,29 @@ func NewNoopLogger() Logger {
 	return &NoopLogger{}
 }
 
-func (l *NoopLogger) Debug(msg string, fields ...Field) {}
-func (l *NoopLogger) Info(msg string, fields ...Field)  {}
-func (l *NoopLogger) Warn(msg string, fields ...Field)  {}
-func (l *NoopLogger) Error(msg string, fields ...Field) {}
-func (l *NoopLogger) Fatal(msg string, fields ...Field) {}
-func (l *NoopLogger) Panic(msg string, fields ...Field) { panic(msg) }
-func (l *NoopLogger) With(fields ...Field) Logger       { return l }
-func (l *NoopLogger) Named(name string) Logger          { return l }
-func (l *NoopLogger) Sync() error                       { return nil }
+// Debug is a no-op implementation.
+func (l *NoopLogger) Debug(_ string, _ ...Field) {}
+
+// Info is a no-op implementation.
+func (l *NoopLogger) Info(_ string, _ ...Field) {}
+
+// Warn is a no-op implementation.
+func (l *NoopLogger) Warn(_ string, _ ...Field) {}
+
+// Error is a no-op implementation.
+func (l *NoopLogger) Error(_ string, _ ...Field) {}
+
+// Fatal is a no-op implementation.
+func (l *NoopLogger) Fatal(_ string, _ ...Field) {}
+
+// Panic panics with the given message.
+func (l *NoopLogger) Panic(msg string, _ ...Field) { panic(msg) }
+
+// With returns the same logger instance.
+func (l *NoopLogger) With(_ ...Field) Logger { return l }
+
+// Named returns the same logger instance.
+func (l *NoopLogger) Named(_ string) Logger { return l }
+
+// Sync flushes any buffered log entries.
+func (l *NoopLogger) Sync() error { return nil }

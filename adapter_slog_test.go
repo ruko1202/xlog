@@ -259,7 +259,7 @@ func initSlogAdapter(t *testing.T) (Logger, logObserver) {
 		WithExitFunc(func() {
 			// Don't actually exit in tests
 		}),
-		WithPanicFunc(func(msg string) {
+		WithPanicFunc(func(_ string) {
 			// Don't actually panic in tests
 		}),
 	)
