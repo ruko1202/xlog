@@ -22,7 +22,7 @@ func setupBenchTracer() {
 func BenchmarkWithOperationSpan(b *testing.B) {
 	setupBenchTracer()
 	logger := zap.NewNop()
-	ctx := ContextWithLogger(context.Background(), logger)
+	ctx := ContextWithLogger(context.Background(), NewZapAdapter(logger))
 
 	b.Run("without fields", func(b *testing.B) {
 		b.ReportAllocs()
@@ -35,10 +35,10 @@ func BenchmarkWithOperationSpan(b *testing.B) {
 	})
 
 	b.Run("with 3 fields", func(b *testing.B) {
-		fields := []zap.Field{
-			zap.String("user_id", "12345"),
-			zap.Int("count", 42),
-			zap.Bool("active", true),
+		fields := []Field{
+			String("user_id", "12345"),
+			Int("count", 42),
+			Bool("active", true),
 		}
 
 		b.ReportAllocs()
@@ -51,17 +51,17 @@ func BenchmarkWithOperationSpan(b *testing.B) {
 	})
 
 	b.Run("with 10 fields", func(b *testing.B) {
-		fields := []zap.Field{
-			zap.String("field1", "value1"),
-			zap.String("field2", "value2"),
-			zap.String("field3", "value3"),
-			zap.Int("field4", 1),
-			zap.Int("field5", 2),
-			zap.Int("field6", 3),
-			zap.Bool("field7", true),
-			zap.Bool("field8", false),
-			zap.Float64("field9", 3.14),
-			zap.Float64("field10", 2.71),
+		fields := []Field{
+			String("field1", "value1"),
+			String("field2", "value2"),
+			String("field3", "value3"),
+			Int("field4", 1),
+			Int("field5", 2),
+			Int("field6", 3),
+			Bool("field7", true),
+			Bool("field8", false),
+			Float64("field9", 3.14),
+			Float64("field10", 2.71),
 		}
 
 		b.ReportAllocs()
@@ -169,81 +169,81 @@ func BenchmarkAddSpanEvent(b *testing.B) {
 
 func BenchmarkConvertFieldsToAttributes(b *testing.B) {
 	b.Run("empty fields", func(b *testing.B) {
-		fields := []zap.Field{}
+		fields := []Field{}
 
 		b.ReportAllocs()
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			_ = convertFieldsToAttributes(fields)
+			_ = fieldsToOtelAttributes(fields)
 		}
 	})
 
 	b.Run("3 string fields", func(b *testing.B) {
-		fields := []zap.Field{
-			zap.String("key1", "value1"),
-			zap.String("key2", "value2"),
-			zap.String("key3", "value3"),
+		fields := []Field{
+			String("key1", "value1"),
+			String("key2", "value2"),
+			String("key3", "value3"),
 		}
 
 		b.ReportAllocs()
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			_ = convertFieldsToAttributes(fields)
+			_ = fieldsToOtelAttributes(fields)
 		}
 	})
 
 	b.Run("3 mixed fields", func(b *testing.B) {
-		fields := []zap.Field{
-			zap.String("string", "value"),
-			zap.Int("int", 42),
-			zap.Bool("bool", true),
+		fields := []Field{
+			String("string", "value"),
+			Int("int", 42),
+			Bool("bool", true),
 		}
 
 		b.ReportAllocs()
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			_ = convertFieldsToAttributes(fields)
+			_ = fieldsToOtelAttributes(fields)
 		}
 	})
 
 	b.Run("10 mixed fields", func(b *testing.B) {
-		fields := []zap.Field{
-			zap.String("field1", "value1"),
-			zap.String("field2", "value2"),
-			zap.String("field3", "value3"),
-			zap.Int("field4", 1),
-			zap.Int("field5", 2),
-			zap.Int("field6", 3),
-			zap.Bool("field7", true),
-			zap.Bool("field8", false),
-			zap.Float64("field9", 3.14),
-			zap.Float64("field10", 2.71),
+		fields := []Field{
+			String("field1", "value1"),
+			String("field2", "value2"),
+			String("field3", "value3"),
+			Int("field4", 1),
+			Int("field5", 2),
+			Int("field6", 3),
+			Bool("field7", true),
+			Bool("field8", false),
+			Float64("field9", 3.14),
+			Float64("field10", 2.71),
 		}
 
 		b.ReportAllocs()
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			_ = convertFieldsToAttributes(fields)
+			_ = fieldsToOtelAttributes(fields)
 		}
 	})
 
 	b.Run("with unsupported types", func(b *testing.B) {
-		fields := []zap.Field{
-			zap.String("string", "value"),
-			zap.Any("any", map[string]string{"key": "value"}),
-			zap.Int("int", 42),
-			zap.Any("any2", []string{"a", "b", "c"}),
+		fields := []Field{
+			String("string", "value"),
+			Any("any", map[string]string{"key": "value"}),
+			Int("int", 42),
+			Any("any2", []string{"a", "b", "c"}),
 		}
 
 		b.ReportAllocs()
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			_ = convertFieldsToAttributes(fields)
+			_ = fieldsToOtelAttributes(fields)
 		}
 	})
 }
@@ -278,14 +278,14 @@ func BenchmarkSpanFromContext(b *testing.B) {
 // BenchmarkSpanCreation_Comparison: WithOperationSpan vs manual span creation.
 func BenchmarkSpanCreation_Comparison(b *testing.B) {
 	setupBenchTracer()
-	logger := zap.NewNop()
-	ctx := ContextWithLogger(context.Background(), logger)
+	zapLogger := zap.NewNop()
+	ctx := ContextWithLogger(context.Background(), NewZapAdapter(zapLogger))
 	tracer := otel.GetTracerProvider().Tracer("benchmark")
 
-	fields := []zap.Field{
-		zap.String("user_id", "12345"),
-		zap.Int("count", 42),
-		zap.Bool("active", true),
+	fields := []Field{
+		String("user_id", "12345"),
+		Int("count", 42),
+		Bool("active", true),
 	}
 
 	b.Run("xlog.WithOperationSpan", func(b *testing.B) {
@@ -309,8 +309,12 @@ func BenchmarkSpanCreation_Comparison(b *testing.B) {
 				attribute.Int("count", 42),
 				attribute.Bool("active", true),
 			)
-			newLogger := logger.Named("test-op").With(fields...)
-			_ = ContextWithLogger(newCtx, newLogger)
+			newLogger := zapLogger.Named("test-op").With(
+				zap.String("user_id", "12345"),
+				zap.Int("count", 42),
+				zap.Bool("active", true),
+			)
+			_ = ContextWithLogger(newCtx, NewZapAdapter(newLogger))
 			span.End()
 		}
 	})
