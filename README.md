@@ -71,9 +71,9 @@ import (
 )
 
 func main() {
-    // Replace global logger
+    // Replace global logger using zap's native function
     logger, _ := zap.NewDevelopment()
-    xlog.ReplaceGlobal(logger)
+    zap.ReplaceGlobals(logger)
 
     // Use without adding logger to context
     ctx := context.Background()
@@ -102,15 +102,14 @@ logger := xlog.LoggerFromContext(ctx)
 logger.Info("direct zap usage")
 ```
 
-#### `ReplaceGlobal(logger *zap.Logger) func()`
+#### Global Logger Management
 
-Replaces the global logger and returns a function to restore the previous logger.
-This function is thread-safe and useful for testing or temporarily changing the logger.
+Use zap's native `ReplaceGlobals()` function to replace the global logger. This is useful for testing or temporarily changing the logger.
 
 ```go
 logger, _ := zap.NewProduction()
-restore := xlog.ReplaceGlobal(logger)
-defer restore() // Restore previous logger when done
+undo := zap.ReplaceGlobals(logger)
+defer undo() // Restore previous logger when done
 ```
 
 #### `WithOperation(ctx context.Context, operation string, fields ...zap.Field) context.Context`
@@ -125,7 +124,7 @@ ctx = xlog.WithOperation(ctx, "payment-processing",
 xlog.Info(ctx, "processing payment")
 ```
 
-**⚠️ Performance Warning**: This function has significant performance overhead (~4μs and ~59KB allocations per call, see [Benchmarks](#benchmarks)).
+**⚠️ Performance Warning**: This function has performance overhead due to creating new logger instances (~4μs and allocations per call).
 
 **Recommended alternative** - use `WithFields` instead:
 
@@ -176,12 +175,41 @@ xlog.Debug(ctx, "processing request")
 
 xlog provides integration with OpenTelemetry for distributed tracing. These functions help manage spans alongside logging.
 
-#### `ReplaceTracerName(name string)`
+#### `ReplaceTracerName(name string) func()`
 
-Sets the global tracer name for creating spans. Call this once during application initialization.
+Sets the global tracer name for creating spans and returns a function to restore the previous name. Call this once during application initialization. This function is thread-safe.
 
 ```go
-xlog.ReplaceTracerName("my-service")
+restore := xlog.ReplaceTracerName("my-service")
+defer restore() // Restore previous tracer name when done
+```
+
+#### `ContextWithTracer(ctx context.Context, tracer trace.Tracer) context.Context`
+
+Adds a tracer to the context. If tracer is nil, the global tracer is used.
+
+```go
+tracer := otel.GetTracerProvider().Tracer("my-service")
+ctx = xlog.ContextWithTracer(ctx, tracer)
+```
+
+#### `TracerFromContext(ctx context.Context) trace.Tracer`
+
+Extracts tracer from context. If no tracer is found, returns the global tracer.
+
+```go
+tracer := xlog.TracerFromContext(ctx)
+ctx, span := tracer.Start(ctx, "my-operation")
+defer span.End()
+```
+
+#### `SpanFromContext(ctx context.Context) trace.Span`
+
+Extracts the current span from context. If no span is found, returns a NoopSpan (safe to use).
+
+```go
+span := xlog.SpanFromContext(ctx)
+span.SetAttributes(attribute.String("key", "value"))
 ```
 
 #### `WithOperationSpan(ctx context.Context, operation string, fields ...zap.Field) (context.Context, trace.Span)`
@@ -239,6 +267,17 @@ xlog.SetSpanAttributes(ctx,
     attribute.Int("user.age", 25),
     attribute.Bool("user.premium", true),
 )
+```
+
+#### `RecordSpanError(ctx context.Context, err error, options ...trace.EventOption)`
+
+Records an error on the current span and sets its status to Error. Safe to call even when no span is present in context.
+
+```go
+if err := doSomething(); err != nil {
+    xlog.RecordSpanError(ctx, err, trace.WithStackTrace(true))
+    return err
+}
 ```
 
 **Note:** All span functions work safely even when no span is present in context (no-op behavior).
@@ -367,16 +406,17 @@ func processRequest(ctx context.Context, r *http.Request) error {
 }
 ```
 
-Alternative using:
+**Alternative (with operation namespace):**
+
+If you need the operation name in logger namespace (which affects log structure):
 
 ```go
 func handleRequest(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
     ctx = xlog.WithOperation(ctx, "handleRequest",
-      zap.String("request_id", uuid.NewString()),
-      zap.String("method", r.Method),
-      zap.String("path", r.URL.Path),
-      zap.String("query", r.URL.RawQuery),
+        zap.String("request_id", uuid.NewString()),
+        zap.String("method", r.Method),
+        zap.String("path", r.URL.Path),
     )
 
     xlog.Info(ctx, "request processing started")
@@ -384,7 +424,26 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-See [example/app](example/app/main.go) for a complete working example.
+**With distributed tracing:**
+
+For complete observability with OpenTelemetry spans:
+
+```go
+func handleRequest(w http.ResponseWriter, r *http.Request) {
+    ctx := r.Context()
+    ctx, span := xlog.WithOperationSpan(ctx, "handleRequest",
+        zap.String("method", r.Method),
+        zap.String("path", r.URL.Path),
+    )
+    defer span.End()
+
+    xlog.Info(ctx, "request processing started")
+    // Logs will include trace_id and span_id automatically
+    // ...
+}
+```
+
+See [example/app](example/app/main.go) for a complete working example with Echo framework and OpenTelemetry.
 
 ### Database Operations
 
@@ -506,7 +565,83 @@ xlog uses zap as the underlying logger, which provides:
 
 - Zero allocation when using structured fields
 - High performance (structured logging is ~10x faster than fmt.Printf)
-- Minimal overhead when logger is not in context
+- Minimal overhead when logger is not in context (~33ns per log call)
+
+### Performance Guidelines
+
+To get the best performance from xlog:
+
+#### 1. Reuse Context
+
+Always reuse context when possible to avoid allocations:
+
+```go
+// ❌ BAD: Creates new context on each iteration
+for i := 0; i < 1000; i++ {
+    ctx := xlog.WithOperation(baseCtx, "process-item")
+    processItem(ctx, items[i])
+}
+
+// ✅ GOOD: Reuse context across iterations
+ctx := xlog.WithOperation(baseCtx, "process-batch")
+for i := 0; i < 1000; i++ {
+    processItem(ctx, items[i])
+}
+```
+
+#### 2. Choose the Right Context Function
+
+- **For single log statements**: Pass fields directly (most efficient)
+  ```go
+  xlog.Info(ctx, "processing", zap.String("user_id", userID))
+  ```
+
+- **For multiple logs with same fields**: Use `WithFields` (better than `WithOperation`)
+  ```go
+  ctx = xlog.WithFields(ctx, zap.String("user_id", userID))
+  xlog.Info(ctx, "started")
+  xlog.Info(ctx, "finished")
+  ```
+
+- **For logger namespace separation**: Use `WithOperation` (has overhead)
+  ```go
+  ctx = xlog.WithOperation(ctx, "payment-processor", fields...)
+  ```
+
+#### 3. Appropriate Span Granularity
+
+Spans are relatively expensive (~730ns). Create them at appropriate granularity:
+
+```go
+// ❌ BAD: Span for trivial operation in loop
+for row := range rows {
+    ctx, span := xlog.WithOperationSpan(ctx, "validate-row")
+    validate(row)
+    span.End()
+}
+
+// ✅ GOOD: Span for the entire batch
+ctx, span := xlog.WithOperationSpan(ctx, "validate-rows")
+defer span.End()
+for row := range rows {
+    validate(row)
+}
+```
+
+#### 4. Use Structured Logging
+
+Prefer structured fields over printf-style formatting:
+
+```go
+// ❌ Less efficient
+xlog.Infof(ctx, "user %s logged in with IP %s", userID, ip)
+
+// ✅ More efficient and structured
+xlog.Info(ctx, "user logged in",
+    zap.String("user_id", userID),
+    zap.String("ip", ip),
+)
+```
 
 ## License
 
