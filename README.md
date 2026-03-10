@@ -567,6 +567,8 @@ xlog uses zap as the underlying logger, which provides:
 - High performance (structured logging is ~10x faster than fmt.Printf)
 - Minimal overhead when logger is not in context (~33ns per log call)
 
+**📊 Benchmarking:** See [BENCHMARKING.md](./BENCHMARKING.md) for detailed performance guidelines and baseline metrics.
+
 ### Performance Guidelines
 
 To get the best performance from xlog:
