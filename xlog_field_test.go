@@ -88,6 +88,13 @@ func TestFieldCreation(t *testing.T) {
 		assert.Equal(t, "false", f.FormatValue())
 	})
 
+	t.Run("Bools field", func(t *testing.T) {
+		f := Bools("key", []bool{true, false})
+		assert.Equal(t, ArrayType, f.Type)
+		assert.Equal(t, int64(0), f.Integer)
+		assert.Equal(t, "[true false]", f.FormatValue())
+	})
+
 	t.Run("Time field", func(t *testing.T) {
 		now := time.Now()
 		f := Time("key", now)
@@ -103,6 +110,12 @@ func TestFieldCreation(t *testing.T) {
 		assert.Equal(t, DurationType, f.Type)
 		assert.Equal(t, int64(d), f.Integer)
 		assert.Equal(t, "5s", f.FormatValue())
+	})
+
+	t.Run("Durations field", func(t *testing.T) {
+		f := Durations("key", []time.Duration{time.Millisecond, time.Second})
+		assert.Equal(t, ArrayType, f.Type)
+		assert.Equal(t, "[1ms 1s]", f.FormatValue())
 	})
 
 	t.Run("Err field", func(t *testing.T) {
@@ -166,6 +179,46 @@ func TestFieldCreation(t *testing.T) {
 		assert.Equal(t, "[1 2 3]", f.FormatValue())
 	})
 
+	t.Run("Int32s field", func(t *testing.T) {
+		vals := []int32{1, 2, 3}
+		f := Int32s("key", vals)
+		assert.Equal(t, ArrayType, f.Type)
+		assert.Equal(t, vals, f.Interface)
+		assert.Equal(t, "[1 2 3]", f.FormatValue())
+	})
+
+	t.Run("Int64s field", func(t *testing.T) {
+		vals := []int64{1, 2, 3}
+		f := Int64s("key", vals)
+		assert.Equal(t, ArrayType, f.Type)
+		assert.Equal(t, vals, f.Interface)
+		assert.Equal(t, "[1 2 3]", f.FormatValue())
+	})
+
+	t.Run("UInts field", func(t *testing.T) {
+		vals := []uint{1, 2, 3}
+		f := UInts("key", vals)
+		assert.Equal(t, ArrayType, f.Type)
+		assert.Equal(t, vals, f.Interface)
+		assert.Equal(t, "[1 2 3]", f.FormatValue())
+	})
+
+	t.Run("UInt32s field", func(t *testing.T) {
+		vals := []uint32{1, 2, 3}
+		f := UInt32s("key", vals)
+		assert.Equal(t, ArrayType, f.Type)
+		assert.Equal(t, vals, f.Interface)
+		assert.Equal(t, "[1 2 3]", f.FormatValue())
+	})
+
+	t.Run("UInt64s field", func(t *testing.T) {
+		vals := []uint64{1, 2, 3}
+		f := UInt64s("key", vals)
+		assert.Equal(t, ArrayType, f.Type)
+		assert.Equal(t, vals, f.Interface)
+		assert.Equal(t, "[1 2 3]", f.FormatValue())
+	})
+
 	t.Run("Binary field", func(t *testing.T) {
 		data := []byte("some bytes")
 		f := Binary("key", data)
@@ -184,21 +237,5 @@ func TestFieldCreation(t *testing.T) {
 		assert.Equal(t, ObjectType, f.Type)
 		assert.Equal(t, obj, f.Interface)
 		assert.Equal(t, "{Name:test Age:30}", f.FormatValue())
-	})
-}
-
-func TestFormatValue(t *testing.T) {
-	t.Run("formats time correctly", func(t *testing.T) {
-		now := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
-		f := Time("key", now)
-		formatted := f.FormatValue()
-		assert.Contains(t, formatted, "2024-01-01")
-		assert.Contains(t, formatted, "12:00:00")
-		assert.Equal(t, "2024-01-01T12:00:00Z", f.FormatValue())
-	})
-
-	t.Run("formats duration correctly", func(t *testing.T) {
-		f := Duration("key", 90*time.Second)
-		assert.Equal(t, "1m30s", f.FormatValue())
 	})
 }

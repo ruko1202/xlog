@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 )
 
 func TestContextWithLogger_Validation(t *testing.T) {
@@ -17,9 +16,9 @@ func TestContextWithLogger_Validation(t *testing.T) {
 			newCtx := ContextWithLogger(ctx, nil)
 
 			// Verify logger was added from global
-			logger := newCtx.Value(loggerCtxKey).(*zap.Logger)
+			logger := newCtx.Value(loggerCtxKey).(Logger)
 			assert.NotNil(t, logger)
-			assert.Equal(t, zap.L(), logger)
+			assert.Equal(t, GlobalLogger(), logger)
 		})
 	})
 

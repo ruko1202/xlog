@@ -20,12 +20,12 @@ func (f checkWriteHookFunc) OnWrite(entry *zapcore.CheckedEntry, fields []zap.Fi
 	f(entry, fields)
 }
 
-func initTestLogger(t *testing.T) (*zap.Logger, *observer.ObservedLogs) {
+func initTestLogger(t *testing.T) (Logger, *observer.ObservedLogs) {
 	t.Helper()
 
 	logger, logs := initZapTestLogger(t)
 
-	return logger, logs
+	return NewZapAdapter(logger), logs
 }
 
 func initZapTestLogger(t *testing.T) (*zap.Logger, *observer.ObservedLogs) {
