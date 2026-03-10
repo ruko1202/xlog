@@ -83,14 +83,24 @@ func Uint32(key string, val uint32) Field {
 	return Field{Key: key, Type: Uint64Type, Integer: int64(val)}
 }
 
+// Float32 creates a float32 field.
+func Float32(key string, val float32) Field {
+	return Field{Key: key, Type: Float64Type, Float: float64(val)}
+}
+
 // Float64 creates a float64 field.
 func Float64(key string, val float64) Field {
 	return Field{Key: key, Type: Float64Type, Float: val}
 }
 
-// Float32 creates a float32 field.
-func Float32(key string, val float32) Field {
-	return Field{Key: key, Type: Float64Type, Float: float64(val)}
+// Float32s creates a field with an float32 slice.
+func Float32s(key string, val []float32) Field {
+	return Field{Key: key, Type: ArrayType, Interface: val}
+}
+
+// Float64s creates a field with an float32 slice.
+func Float64s(key string, val []float64) Field {
+	return Field{Key: key, Type: ArrayType, Interface: val}
 }
 
 // Bool creates a boolean field.
@@ -100,6 +110,11 @@ func Bool(key string, val bool) Field {
 		f.Integer = 1
 	}
 	return f
+}
+
+// Bools creates a field with an bool slice.
+func Bools(key string, val []bool) Field {
+	return Field{Key: key, Type: ArrayType, Interface: val}
 }
 
 // Time creates a time.Time field.
@@ -112,12 +127,17 @@ func Duration(key string, val time.Duration) Field {
 	return Field{Key: key, Type: DurationType, Integer: int64(val)}
 }
 
+// Durations creates a field with an duration slice.
+func Durations(key string, val []time.Duration) Field {
+	return Field{Key: key, Type: ArrayType, Interface: val}
+}
+
 // Err creates an error field with key "error".
 func Err(err error) Field {
 	if err == nil {
 		return Field{Key: "error", Type: ErrorType, Interface: nil}
 	}
-	return Field{Key: "error", Type: ErrorType, String: err.Error(), Interface: err}
+	return Field{Key: "error", Type: ErrorType, String: "", Interface: err}
 }
 
 // NamedError creates a named error field.
@@ -141,6 +161,31 @@ func Strings(key string, val []string) Field {
 
 // Ints creates a field with an int slice.
 func Ints(key string, val []int) Field {
+	return Field{Key: key, Type: ArrayType, Interface: val}
+}
+
+// Int32s creates a field with an int32 slice.
+func Int32s(key string, val []int32) Field {
+	return Field{Key: key, Type: ArrayType, Interface: val}
+}
+
+// Int64s creates a field with an int64 slice.
+func Int64s(key string, val []int64) Field {
+	return Field{Key: key, Type: ArrayType, Interface: val}
+}
+
+// UInts creates a field with an uint slice.
+func UInts(key string, val []uint) Field {
+	return Field{Key: key, Type: ArrayType, Interface: val}
+}
+
+// UInt32s creates a field with an uint32 slice.
+func UInt32s(key string, val []uint32) Field {
+	return Field{Key: key, Type: ArrayType, Interface: val}
+}
+
+// UInt64s creates a field with an uint64 slice.
+func UInt64s(key string, val []uint64) Field {
 	return Field{Key: key, Type: ArrayType, Interface: val}
 }
 
@@ -175,7 +220,10 @@ func (f Field) FormatValue() string {
 	case DurationType:
 		return time.Duration(f.Integer).String()
 	case ErrorType:
-		return f.String
+		if err, ok := f.Interface.(error); ok && err != nil {
+			return err.Error()
+		}
+		return ""
 	case AnyType, ArrayType, ObjectType:
 		return fmt.Sprintf("%+v", f.Interface)
 	case BinaryType:

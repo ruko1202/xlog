@@ -110,7 +110,7 @@ func TestFieldCreation(t *testing.T) {
 		f := Err(err)
 		assert.Equal(t, "error", f.Key)
 		assert.Equal(t, ErrorType, f.Type)
-		assert.Equal(t, "test error", f.String)
+		assert.Equal(t, "", f.String)
 		assert.Equal(t, err, f.Interface)
 		assert.Equal(t, err.Error(), f.FormatValue())
 	})
