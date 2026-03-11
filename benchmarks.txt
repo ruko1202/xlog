@@ -1,0 +1,38 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/ruko1202/xlog
+cpu: Apple M4 Pro
+BenchmarkLogger/zap-14                   	1000000000	         0.3403 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLogger/xlog-14                  	1000000000	         2.038 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAdvance_WithOperation/zap/create_logger_in_loop/with_operation_name-14         	98351362	        36.51 ns/op	     128 B/op	       1 allocs/op
+BenchmarkAdvance_WithOperation/zap/create_logger_in_loop/with_operation_name_and_fields-14         	39811099	        91.60 ns/op	     320 B/op	       3 allocs/op
+BenchmarkAdvance_WithOperation/zap/reuse_logger/with_operation_name-14                             	1000000000	         0.3450 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAdvance_WithOperation/zap/reuse_logger/with_operation_name_and_fields-14                  	1000000000	         0.3474 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAdvance_WithOperation/xlog/create_context_in_loop/with_operation_name-14                  	57929618	        62.65 ns/op	     192 B/op	       4 allocs/op
+BenchmarkAdvance_WithOperation/xlog/create_context_in_loop/with_operation_name_and_fields-14       	25027808	       141.8 ns/op	     464 B/op	       7 allocs/op
+BenchmarkAdvance_WithOperation/xlog/reuse_context/with_operation_name-14                           	1000000000	         2.120 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAdvance_WithOperation/xlog/reuse_context/with_operation_name_and_fields-14                	1000000000	         1.947 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAdvance_WithFields/zap/create_logger_in_loop-14                                           	62806672	        57.14 ns/op	     192 B/op	       2 allocs/op
+BenchmarkAdvance_WithFields/zap/reuse_logger-14                                                    	1000000000	         0.3334 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAdvance_WithFields/xlog/create_context_in_loop-14                                         	35114613	       112.4 ns/op	     328 B/op	       5 allocs/op
+BenchmarkAdvance_WithFields/xlog/reuse_context-14                                                  	1000000000	         1.969 ns/op	       0 B/op	       0 allocs/op
+BenchmarkWithOperationSpan/without_fields-14                                                       	 7140357	       613.4 ns/op	    1296 B/op	       7 allocs/op
+BenchmarkWithOperationSpan/with_3_fields-14                                                        	 3300412	      1189 ns/op	    1965 B/op	      11 allocs/op
+BenchmarkWithOperationSpan/with_10_fields-14                                                       	 1598529	      2769 ns/op	    3832 B/op	      14 allocs/op
+BenchmarkSetSpanAttributes/single_attribute-14                                                     	46297536	        73.63 ns/op	     115 B/op	       1 allocs/op
+BenchmarkSetSpanAttributes/3_attributes-14                                                         	32629876	       105.8 ns/op	     156 B/op	       0 allocs/op
+BenchmarkSetSpanAttributes/10_attributes-14                                                        	10610878	       341.1 ns/op	     547 B/op	       0 allocs/op
+BenchmarkSetSpanAttributes/no_span_in_context-14                                                   	127036926	        30.60 ns/op	      64 B/op	       1 allocs/op
+BenchmarkAddSpanEvent/simple_event-14                                                              	23150343	       144.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAddSpanEvent/no_span_in_context-14                                                        	1000000000	         3.005 ns/op	       0 B/op	       0 allocs/op
+BenchmarkConvertFieldsToAttributes/empty_fields-14                                                 	1000000000	         1.275 ns/op	       0 B/op	       0 allocs/op
+BenchmarkConvertFieldsToAttributes/3_string_fields-14                                              	40037701	        85.16 ns/op	     192 B/op	       1 allocs/op
+BenchmarkConvertFieldsToAttributes/3_mixed_fields-14                                               	43395801	        87.92 ns/op	     192 B/op	       1 allocs/op
+BenchmarkConvertFieldsToAttributes/10_mixed_fields-14                                              	12743454	       295.3 ns/op	     704 B/op	       1 allocs/op
+BenchmarkConvertFieldsToAttributes/with_unsupported_types-14                                       	59655157	        58.09 ns/op	     128 B/op	       1 allocs/op
+BenchmarkSpanFromContext/with_span-14                                                              	768513366	         4.736 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSpanFromContext/without_span-14                                                           	1000000000	         1.637 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSpanCreation_Comparison/xlog.WithOperationSpan-14                                         	 3927963	      1358 ns/op	    2010 B/op	      11 allocs/op
+BenchmarkSpanCreation_Comparison/manual_span_+_logger-14                                           	 2586366	      1550 ns/op	    2062 B/op	      10 allocs/op
+PASS
+ok  	github.com/ruko1202/xlog	174.759s

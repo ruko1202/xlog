@@ -45,7 +45,8 @@ deps:
 #   - golangci-lint: comprehensive Go linter
 .PHONY: bin-deps
 bin-deps:
-	GOBIN=$(GOBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.2
+	GOBIN=$(GOBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.2 && \
+	GOBIN=$(GOBIN) go install golang.org/x/perf/cmd/benchstat@latest
 
 # -------------------------------------
 # Tests
@@ -79,10 +80,82 @@ test-cov:
 	go test -race -p 2 -count 2 -coverprofile=coverage.out -covermode atomic ./...
 	go tool cover -func=coverage.out | sed 's|github.com/ruko1202/xlog/||' | sed -E 's/\t+/\t/g' | tee coverage.report
 
+# -------------------------------------
+# Benchmarking and performance analysis
+# -------------------------------------
 
-.PHONY: test-bench
-test-bench:
-	go test -bench=. -benchtime 100000x -run='^&' -cpuprofile=cpu.pprof -memprofile=mem.pprof -benchmem
+# BENCHMARK_FILE - Target file for benchmark results
+# Default: benchmarks.txt
+BENCHMARK_FILE ?= benchmarks.txt
+
+# BASELINE_FILE - Baseline benchmark file for comparison
+# Default: benchmarks_baseline.txt
+BASELINE_FILE ?= benchmarks_baseline.txt
+
+# bench - Run full benchmark suite and save results
+# Options:
+#   -bench=.: Run all benchmarks
+#   -benchmem: Include memory allocation statistics
+#   -benchtime=3s: Run each benchmark for 3 seconds
+#   -run='^$': Don't run any tests (only benchmarks)
+# Output: BENCHMARK_FILE (default: benchmarks.txt)
+# Example: make bench BENCHMARK_FILE=my_benchmarks.txt
+.PHONY: bench
+bench:
+	$(info Running benchmarks and saving to $(BENCHMARK_FILE)...)
+	@go test -bench=. -benchmem -benchtime=3s -run='^$$' | tee $(BENCHMARK_FILE)
+
+# bench-baseline - Save current benchmarks as baseline for future comparisons
+# This creates a baseline file that can be used with bench-compare
+# Output: BASELINE_FILE (default: benchmarks_baseline.txt)
+# Example: make bench-baseline BASELINE_FILE=my_baseline.txt
+.PHONY: bench-baseline
+bench-baseline:
+	$(info Saving baseline benchmarks to $(BASELINE_FILE)...)
+	@go test -bench=. -benchmem -benchtime=3s -run='^$$' | tee $(BASELINE_FILE)
+
+# bench-compare - Compare current benchmarks with baseline
+# Requires benchstat to be installed (will auto-install if missing)
+# Compares BASELINE_FILE with BENCHMARK_FILE
+# Example: make bench-compare
+# Example: make bench-compare BASELINE_FILE=old.txt BENCHMARK_FILE=new.txt
+.PHONY: bench-compare
+bench-compare:
+	$(info Comparing $(BASELINE_FILE) with $(BENCHMARK_FILE)...)
+	@echo "========================================"
+	@echo "Benchmark Comparison"
+	@echo "========================================"
+	@echo "Baseline: $(BASELINE_FILE)"
+	@echo "Current:  $(BENCHMARK_FILE)"
+	@echo ""
+	@$(GOBIN)/benchstat $(BASELINE_FILE) $(BENCHMARK_FILE)
+
+# bench-full - Run benchmarks and compare with baseline in one command
+# This is a convenience target that runs both bench and bench-compare
+# Requires BASELINE_FILE to exist (create with bench-baseline first)
+# Example: make bench-full
+.PHONY: bench-full
+bench-full: bench bench-compare
+
+# bench-quick - Run quick benchmarks (1s per benchmark instead of 3s)
+# Useful for rapid iteration during development
+# Output: BENCHMARK_FILE (default: benchmarks.txt)
+.PHONY: bench-quick
+bench-quick:
+	$(info Running quick benchmarks and saving to $(BENCHMARK_FILE)...)
+	@go test -bench=. -benchmem -benchtime=1s -run='^$$' | tee $(BENCHMARK_FILE)
+
+# bench-res - Run benchmarks with CPU and memory profiling
+# Generates cpu.prof and mem.prof file for analysis with pprof
+# Example: make bench-res
+# Analyze: go tool pprof -http=:8080 cpu.prof
+.PHONY: bench-res
+bench-res:
+	$(info Running benchmarks with CPU profiling...)
+	@go test -bench=. -benchmem -benchtime=3s -cpuprofile=cpu.prof -memprofile=mem.prof -run='^$$'
+	@echo ""
+	@echo "CPU and memory profile saved to cpu.prof and mem.prof"
+	@echo "Analyze with: go tool pprof -http=:8080 cpu.prof / mem.prof"
 
 # -------------------------------------
 # Linter and formatter
