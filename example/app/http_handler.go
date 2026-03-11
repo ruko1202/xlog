@@ -10,9 +10,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.uber.org/zap"
 
 	"github.com/ruko1202/xlog"
+	"github.com/ruko1202/xlog/xfield"
 )
 
 // handleWork - main handler
@@ -24,7 +24,7 @@ func handleWork(c echo.Context) error {
 
 	status := "success"
 	defer func() {
-		xlog.Info(ctx, "Finishing request processing...", zap.String("status", status))
+		xlog.Info(ctx, "Finishing request processing...", xfield.String("status", status))
 		// Increment metric at the very end. TraceID will be picked up automatically!
 		counter.Add(ctx, 1, metric.WithAttributes(attribute.String("status", status)))
 	}()
@@ -43,7 +43,7 @@ func handleWork(c echo.Context) error {
 
 func serviceStep(ctx context.Context, fail bool, userID string) error {
 	ctx, span := xlog.WithOperationSpan(ctx, "serviceStep",
-		zap.String("user_id", userID),
+		xfield.String("user_id", userID),
 	)
 	defer span.End()
 
@@ -57,7 +57,7 @@ func serviceStep(ctx context.Context, fail bool, userID string) error {
 	if err != nil {
 		err := fmt.Errorf("dbstep failed: %w", err)
 
-		xlog.Error(ctx, "error during work execution", zap.Error(err))
+		xlog.Error(ctx, "error during work execution", xfield.Error(err))
 
 		return err
 	}
@@ -75,7 +75,7 @@ func dbStep(ctx context.Context, fail bool) error {
 	err := doDbQueryStep(ctx, fail)
 	if err != nil {
 		err := fmt.Errorf("dbStep: %w", err)
-		xlog.Error(ctx, err.Error(), zap.Error(err))
+		xlog.Error(ctx, err.Error(), xfield.Error(err))
 		return err
 	}
 

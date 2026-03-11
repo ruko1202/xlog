@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"go.uber.org/zap"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 func BenchmarkLogger(b *testing.B) {
@@ -18,7 +20,7 @@ func BenchmarkLogger(b *testing.B) {
 	})
 
 	b.Run("xlog", func(b *testing.B) {
-		ctx = ContextWithLogger(ctx, zap.NewNop())
+		ctx = ContextWithLogger(ctx, NewZapAdapter(zap.NewNop()))
 		withBenchedLogger(b, func() {
 			Info(ctx, "hello world")
 		})
@@ -58,7 +60,7 @@ func BenchmarkAdvance_WithOperation(b *testing.B) {
 	})
 
 	b.Run("xlog", func(b *testing.B) {
-		ctx = ContextWithLogger(ctx, zap.NewNop())
+		ctx = ContextWithLogger(ctx, NewZapAdapter(zap.NewNop()))
 		b.Run("create context in loop/with operation name", func(b *testing.B) {
 			withBenchedLogger(b, func() {
 				ctx := WithOperation(ctx, "xlog operation")
@@ -67,7 +69,7 @@ func BenchmarkAdvance_WithOperation(b *testing.B) {
 		})
 		b.Run("create context in loop/with operation name and fields", func(b *testing.B) {
 			withBenchedLogger(b, func() {
-				ctx := WithOperation(ctx, "xlog operation", zap.String("key", "value"))
+				ctx := WithOperation(ctx, "xlog operation", xfield.String("key", "value"))
 				Info(ctx, "hello world")
 			})
 		})
@@ -78,7 +80,7 @@ func BenchmarkAdvance_WithOperation(b *testing.B) {
 			})
 		})
 		b.Run("reuse context/with operation name and fields", func(b *testing.B) {
-			ctx := WithOperation(ctx, "xlog operation", zap.String("key", "value"))
+			ctx := WithOperation(ctx, "xlog operation", xfield.String("key", "value"))
 			withBenchedLogger(b, func() {
 				Info(ctx, "hello world")
 			})
@@ -106,15 +108,15 @@ func BenchmarkAdvance_WithFields(b *testing.B) {
 	})
 
 	b.Run("xlog", func(b *testing.B) {
-		ctx = ContextWithLogger(ctx, zap.NewNop())
+		ctx = ContextWithLogger(ctx, NewZapAdapter(zap.NewNop()))
 		b.Run("create context in loop", func(b *testing.B) {
 			withBenchedLogger(b, func() {
-				ctx := WithFields(ctx, zap.String("key", "value"))
+				ctx := WithFields(ctx, xfield.String("key", "value"))
 				Info(ctx, "hello world")
 			})
 		})
 		b.Run("reuse context", func(b *testing.B) {
-			ctx := WithFields(ctx, zap.String("key", "value"))
+			ctx := WithFields(ctx, xfield.String("key", "value"))
 			withBenchedLogger(b, func() {
 				Info(ctx, "hello world")
 			})

@@ -7,12 +7,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 type loggerCalls struct {
-	log  func(ctx context.Context, msg string, fields ...zap.Field)
+	log  func(ctx context.Context, msg string, fields ...xfield.Field)
 	logf func(ctx context.Context, template string, args ...any)
 }
 
@@ -42,7 +43,7 @@ func testLogger(t *testing.T, level zapcore.Level, calls *loggerCalls) {
 
 			message := fmt.Sprintf("test %s message", level)
 
-			calls.log(ctx, message, zap.String("key", "value"))
+			calls.log(ctx, message, xfield.String("key", "value"))
 
 			require.Equal(t, 1, logs.Len())
 			entry := logs.All()[0]
@@ -72,7 +73,7 @@ func testLogger(t *testing.T, level zapcore.Level, calls *loggerCalls) {
 func TestUseGlobalLogger(t *testing.T) {
 	logger, logs := initTestLogger(t)
 
-	returnToPrev := zap.ReplaceGlobals(logger)
+	returnToPrev := ReplaceGlobalLogger(logger)
 	t.Cleanup(returnToPrev)
 
 	ctx := context.Background()

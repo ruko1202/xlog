@@ -13,8 +13,8 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 func setupTestTracer(t *testing.T) *tracetest.SpanRecorder {
@@ -68,8 +68,8 @@ func TestWithOperationSpan(t *testing.T) {
 
 		// Create span with fields
 		ctx, span := WithOperationSpan(ctx, "payment-process",
-			zap.String("user_id", "12345"),
-			zap.Int("amount", 100),
+			xfield.String("user_id", "12345"),
+			xfield.Int("amount", 100),
 		)
 		defer span.End()
 
@@ -270,107 +270,6 @@ func TestRecordSpanError(t *testing.T) {
 	})
 }
 
-func TestConvertFieldsToAttributes(t *testing.T) {
-	t.Run("converts string fields", func(t *testing.T) {
-		fields := []zap.Field{
-			zap.String("key1", "value1"),
-			zap.String("key2", "value2"),
-		}
-
-		attrs := convertFieldsToAttributes(fields)
-		require.Equal(t, 2, len(attrs))
-		assert.Equal(t, attribute.String("key1", "value1"), attrs[0])
-		assert.Equal(t, attribute.String("key2", "value2"), attrs[1])
-	})
-
-	t.Run("converts integer fields", func(t *testing.T) {
-		fields := []zap.Field{
-			zap.Int("int", 42),
-			zap.Int64("int64", 9999),
-			zap.Int32("int32", 100),
-		}
-
-		attrs := convertFieldsToAttributes(fields)
-		require.Equal(t, 3, len(attrs))
-		assert.Equal(t, attribute.Int64("int", 42), attrs[0])
-		assert.Equal(t, attribute.Int64("int64", 9999), attrs[1])
-		assert.Equal(t, attribute.Int64("int32", 100), attrs[2])
-	})
-
-	t.Run("converts bool fields", func(t *testing.T) {
-		fields := []zap.Field{
-			zap.Bool("bool1", true),
-			zap.Bool("bool2", false),
-		}
-
-		attrs := convertFieldsToAttributes(fields)
-		require.Equal(t, 2, len(attrs))
-		assert.Equal(t, attribute.Bool("bool1", true), attrs[0])
-		assert.Equal(t, attribute.Bool("bool2", false), attrs[1])
-	})
-
-	t.Run("converts float fields", func(t *testing.T) {
-		fields := []zap.Field{
-			zap.Float64("float64", 3.14),
-			zap.Float64("another_float", 2.71),
-		}
-
-		attrs := convertFieldsToAttributes(fields)
-		require.Equal(t, 2, len(attrs))
-		assert.Equal(t, attribute.Key("float64"), attrs[0].Key)
-		assert.InDelta(t, 3.14, attrs[0].Value.AsFloat64(), 0.001)
-		assert.Equal(t, attribute.Key("another_float"), attrs[1].Key)
-		assert.InDelta(t, 2.71, attrs[1].Value.AsFloat64(), 0.001)
-	})
-
-	t.Run("handles empty fields", func(t *testing.T) {
-		fields := []zap.Field{}
-
-		attrs := convertFieldsToAttributes(fields)
-		assert.Nil(t, attrs)
-	})
-
-	t.Run("returns nil when all fields are unsupported", func(t *testing.T) {
-		fields := []zap.Field{
-			zap.Any("any1", map[string]string{"key": "value"}),
-			zap.Any("any2", []string{"a", "b", "c"}),
-		}
-
-		attrs := convertFieldsToAttributes(fields)
-		assert.Nil(t, attrs)
-	})
-
-	t.Run("ignores complex types", func(t *testing.T) {
-		fields := []zap.Field{
-			zap.String("string", "value"),
-			zap.Any("any", map[string]string{"key": "value"}),
-			zap.Int("int", 42),
-		}
-
-		attrs := convertFieldsToAttributes(fields)
-		// Should only have string and int, Any is ignored
-		require.Equal(t, 2, len(attrs))
-		assert.Equal(t, attribute.String("string", "value"), attrs[0])
-		assert.Equal(t, attribute.Int64("int", 42), attrs[1])
-	})
-
-	t.Run("handles mixed field types", func(t *testing.T) {
-		fields := []zap.Field{
-			zap.String("name", "test"),
-			zap.Int("count", 10),
-			zap.Bool("active", true),
-			zap.Float64("rate", 0.95),
-		}
-
-		attrs := convertFieldsToAttributes(fields)
-		require.Equal(t, 4, len(attrs))
-		assert.Equal(t, attribute.String("name", "test"), attrs[0])
-		assert.Equal(t, attribute.Int64("count", 10), attrs[1])
-		assert.Equal(t, attribute.Bool("active", true), attrs[2])
-		assert.InDelta(t, 0.95, attrs[3].Value.AsFloat64(), 0.001)
-	})
-}
-
 func TestTraceMetadataFields(t *testing.T) {
 	t.Run("adds trace_id and span_id when span is present", func(t *testing.T) {
 		spanRecorder := setupTestTracer(t)
@@ -426,45 +325,6 @@ func TestTraceMetadataFields(t *testing.T) {
 	})
 }
 
-func TestIsSupportedFieldType(t *testing.T) {
-	t.Run("supported types", func(t *testing.T) {
-		supportedTypes := []zapcore.FieldType{
-			zapcore.StringType,
-			zapcore.Int64Type, zapcore.Int32Type, zapcore.Int16Type, zapcore.Int8Type,
-			zapcore.Uint64Type, zapcore.Uint32Type, zapcore.Uint16Type, zapcore.Uint8Type,
-			zapcore.BoolType,
-			zapcore.Float64Type, zapcore.Float32Type,
-		}
-
-		for _, ft := range supportedTypes {
-			assert.True(t, isSupportedFieldType(ft), "type %v should be supported", ft)
-		}
-	})
-
-	t.Run("unsupported types", func(t *testing.T) {
-		unsupportedTypes := []zapcore.FieldType{
-			zapcore.ArrayMarshalerType,
-			zapcore.ObjectMarshalerType,
-			zapcore.BinaryType,
-			zapcore.ByteStringType,
-			zapcore.Complex64Type,
-			zapcore.Complex128Type,
-			zapcore.DurationType,
-			zapcore.TimeType,
-			zapcore.TimeFullType,
-			zapcore.ErrorType,
-			zapcore.ReflectType,
-			zapcore.NamespaceType,
-			zapcore.StringerType,
-			zapcore.SkipType,
-		}
-
-		for _, ft := range unsupportedTypes {
-			assert.False(t, isSupportedFieldType(ft), "type %v should NOT be supported", ft)
-		}
-	})
-}
-
 func TestMarkSpanError(t *testing.T) {
 	t.Run("marks span as error when error field is present", func(t *testing.T) {
 		spanRecorder := setupTestTracer(t)
@@ -476,7 +336,7 @@ func TestMarkSpanError(t *testing.T) {
 
 		// Log error
 		testErr := errors.New("test error")
-		Error(ctx, "operation failed", zap.Error(testErr))
+		Error(ctx, "operation failed", xfield.Error(testErr))
 
 		require.Equal(t, 1, logs.Len())
 
@@ -499,7 +359,7 @@ func TestMarkSpanError(t *testing.T) {
 		defer span.End()
 
 		// Log error without error field
-		Error(ctx, "operation failed", zap.String("reason", "timeout"))
+		Error(ctx, "operation failed", xfield.String("reason", "timeout"))
 
 		require.Equal(t, 1, logs.Len())
 

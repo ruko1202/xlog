@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"go.uber.org/zap"
-
 	"github.com/ruko1202/xlog"
+	"github.com/ruko1202/xlog/xfield"
 )
 
 func runWorker(ctx context.Context) {
@@ -27,7 +26,7 @@ func task(ctx context.Context, i int) {
 
 	req, err := http.NewRequest(http.MethodGet, "http://localhost:8080/api/work", nil)
 	if err != nil {
-		xlog.Error(ctx, "create request failed", zap.Error(err))
+		xlog.Error(ctx, "create request failed", xfield.Error(err))
 		return
 	}
 	query := req.URL.Query()
@@ -40,17 +39,17 @@ func task(ctx context.Context, i int) {
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
-		xlog.Error(ctx, "do request failed", zap.Error(err))
+		xlog.Error(ctx, "do request failed", xfield.Error(err))
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		xlog.Error(ctx, "read response body failed", zap.Error(err))
+		xlog.Error(ctx, "read response body failed", xfield.Error(err))
 		return
 	}
 	xlog.Info(ctx, string(body),
-		zap.Any("headers", resp.Header),
+		xfield.Any("headers", resp.Header),
 	)
 }

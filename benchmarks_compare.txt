@@ -1,0 +1,115 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/ruko1202/xlog
+cpu: Apple M4 Pro
+                                                                                    │ benchmarks_baseline.txt │             benchmarks.txt             │
+                                                                                    │         sec/op          │     sec/op      vs base                │
+Logger/zap-14                                                                                 0.3483n ±    8%   0.3363n ±   3%        ~ (p=0.138 n=10)
+Logger/xlog-14                                                                                 6.231n ±   55%    5.860n ±  60%        ~ (p=0.481 n=10)
+Advance_WithOperation/zap/create_logger_in_loop/with_operation_name-14                         36.11n ±    1%    35.87n ±   1%   -0.68% (p=0.023 n=10)
+Advance_WithOperation/zap/create_logger_in_loop/with_operation_name_and_fields-14              87.12n ±    1%    86.20n ±   1%   -1.06% (p=0.007 n=10)
+Advance_WithOperation/zap/reuse_logger/with_operation_name-14                                 0.3684n ±    6%   0.3483n ±   1%   -5.44% (p=0.002 n=10)
+Advance_WithOperation/zap/reuse_logger/with_operation_name_and_fields-14                      0.3673n ±    3%   0.3647n ±   3%        ~ (p=0.353 n=10)
+Advance_WithOperation/xlog/create_context_in_loop/with_operation_name-14                       54.01n ±    5%    61.43n ±   3%  +13.74% (p=0.000 n=10)
+Advance_WithOperation/xlog/create_context_in_loop/with_operation_name_and_fields-14            104.2n ±    1%    136.9n ±   5%  +31.32% (p=0.000 n=10)
+Advance_WithOperation/xlog/reuse_context/with_operation_name-14                                2.440n ±    4%    2.101n ±   6%  -13.91% (p=0.000 n=10)
+Advance_WithOperation/xlog/reuse_context/with_operation_name_and_fields-14                     2.485n ±    2%    2.175n ±   3%  -12.49% (p=0.001 n=10)
+Advance_WithFields/zap/create_logger_in_loop-14                                                53.26n ±    3%    53.80n ±   4%        ~ (p=0.218 n=10)
+Advance_WithFields/zap/reuse_logger-14                                                        0.4223n ±   13%   0.3644n ±   8%  -13.70% (p=0.015 n=10)
+Advance_WithFields/xlog/create_context_in_loop-14                                              69.58n ±    1%    98.51n ±   4%  +41.59% (p=0.000 n=10)
+Advance_WithFields/xlog/reuse_context-14                                                       2.345n ±    2%    2.062n ±   5%  -12.09% (p=0.001 n=10)
+WithOperationSpan/without_fields-14                                                            674.3n ±   25%    670.9n ±  44%        ~ (p=0.971 n=10)
+WithOperationSpan/with_3_fields-14                                                             6.384µ ± 3042%    4.222µ ± 945%        ~ (p=0.796 n=10)
+WithOperationSpan/with_10_fields-14                                                            34.01µ ±   99%    25.96µ ± 375%        ~ (p=0.912 n=10)
+SetSpanAttributes/single_attribute-14                                                          86.50n ±    2%    88.09n ±   3%   +1.85% (p=0.004 n=10)
+SetSpanAttributes/3_attributes-14                                                              127.8n ±    3%    133.9n ±   1%   +4.73% (p=0.000 n=10)
+SetSpanAttributes/10_attributes-14                                                             406.4n ±    1%    430.4n ±   2%   +5.92% (p=0.000 n=10)
+SetSpanAttributes/no_span_in_context-14                                                        38.40n ±    7%    40.04n ±   1%   +4.28% (p=0.000 n=10)
+AddSpanEvent/simple_event-14                                                                   145.8n ±    1%    135.0n ±   0%   -7.44% (p=0.000 n=10)
+AddSpanEvent/no_span_in_context-14                                                             3.067n ±    2%    3.047n ±   0%   -0.67% (p=0.007 n=10)
+ConvertFieldsToAttributes/empty_fields-14                                                      1.304n ±    1%    1.308n ±   1%        ~ (p=0.197 n=10)
+ConvertFieldsToAttributes/3_string_fields-14                                                   106.5n ±    2%    117.5n ±   4%  +10.33% (p=0.000 n=10)
+ConvertFieldsToAttributes/3_mixed_fields-14                                                    107.1n ±    2%    121.2n ±   3%  +13.11% (p=0.000 n=10)
+ConvertFieldsToAttributes/10_mixed_fields-14                                                   369.0n ±    1%    419.8n ±   3%  +13.75% (p=0.000 n=10)
+ConvertFieldsToAttributes/with_unsupported_types-14                                            74.39n ±    2%    84.98n ±   2%  +14.24% (p=0.000 n=10)
+SpanFromContext/with_span-14                                                                   4.859n ±    2%    4.792n ±   1%        ~ (p=0.101 n=10)
+SpanFromContext/without_span-14                                                                1.565n ±    3%    1.578n ±   2%        ~ (p=0.305 n=10)
+SpanCreation_Comparison/xlog.WithOperationSpan-14                                              1.356µ ±   39%    1.860µ ±  51%        ~ (p=0.218 n=10)
+SpanCreation_Comparison/manual_span_+_logger-14                                                2.882µ ± 3356%    4.063µ ± 203%        ~ (p=0.579 n=10)
+geomean                                                                                        34.47n            35.08n          +1.75%
+
+                                                                                    │ benchmarks_baseline.txt │             benchmarks.txt              │
+                                                                                    │          B/op           │     B/op       vs base                  │
+Logger/zap-14                                                                                   0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+Logger/xlog-14                                                                                  0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+Advance_WithOperation/zap/create_logger_in_loop/with_operation_name-14                          128.0 ±  0%       128.0 ±  0%        ~ (p=1.000 n=10) ¹
+Advance_WithOperation/zap/create_logger_in_loop/with_operation_name_and_fields-14               320.0 ±  0%       320.0 ±  0%        ~ (p=1.000 n=10) ¹
+Advance_WithOperation/zap/reuse_logger/with_operation_name-14                                   0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+Advance_WithOperation/zap/reuse_logger/with_operation_name_and_fields-14                        0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+Advance_WithOperation/xlog/create_context_in_loop/with_operation_name-14                        176.0 ±  0%       192.0 ±  0%   +9.09% (p=0.000 n=10)
+Advance_WithOperation/xlog/create_context_in_loop/with_operation_name_and_fields-14             368.0 ±  0%       464.0 ±  0%  +26.09% (p=0.000 n=10)
+Advance_WithOperation/xlog/reuse_context/with_operation_name-14                                 0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+Advance_WithOperation/xlog/reuse_context/with_operation_name_and_fields-14                      0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+Advance_WithFields/zap/create_logger_in_loop-14                                                 192.0 ±  0%       192.0 ±  0%        ~ (p=1.000 n=10) ¹
+Advance_WithFields/zap/reuse_logger-14                                                          0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+Advance_WithFields/xlog/create_context_in_loop-14                                               240.0 ±  0%       328.0 ±  0%  +36.67% (p=0.000 n=10)
+Advance_WithFields/xlog/reuse_context-14                                                        0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+WithOperationSpan/without_fields-14                                                           1.304Ki ± 23%     1.256Ki ± 24%        ~ (p=0.778 n=10)
+WithOperationSpan/with_3_fields-14                                                            1.594Ki ±  0%     1.797Ki ±  0%  +12.75% (p=0.000 n=10)
+WithOperationSpan/with_10_fields-14                                                           3.039Ki ±  0%     3.742Ki ±  0%  +23.14% (p=0.000 n=10)
+SetSpanAttributes/single_attribute-14                                                           115.0 ±  0%       115.0 ±  0%        ~ (p=1.000 n=10) ¹
+SetSpanAttributes/3_attributes-14                                                               156.0 ±  0%       156.0 ±  0%        ~ (p=1.000 n=10) ¹
+SetSpanAttributes/10_attributes-14                                                              547.0 ±  0%       547.0 ±  0%        ~ (p=1.000 n=10) ¹
+SetSpanAttributes/no_span_in_context-14                                                         64.00 ±  0%       64.00 ±  0%        ~ (p=1.000 n=10) ¹
+AddSpanEvent/simple_event-14                                                                    0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+AddSpanEvent/no_span_in_context-14                                                              0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/empty_fields-14                                                       0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/3_string_fields-14                                                    192.0 ±  0%       192.0 ±  0%        ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/3_mixed_fields-14                                                     192.0 ±  0%       192.0 ±  0%        ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/10_mixed_fields-14                                                    704.0 ±  0%       704.0 ±  0%        ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/with_unsupported_types-14                                             128.0 ±  0%       128.0 ±  0%        ~ (p=1.000 n=10) ¹
+SpanFromContext/with_span-14                                                                    0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+SpanFromContext/without_span-14                                                                 0.000 ±  0%       0.000 ±  0%        ~ (p=1.000 n=10) ¹
+SpanCreation_Comparison/xlog.WithOperationSpan-14                                             1.726Ki ± 47%     1.989Ki ± 29%        ~ (p=0.070 n=10)
+SpanCreation_Comparison/manual_span_+_logger-14                                               1.594Ki ±  0%     1.789Ki ± 86%  +12.25% (p=0.000 n=10)
+geomean                                                                                                     ²                   +3.76%                ²
+¹ all samples are equal
+² summaries must be >0 to compute geomean
+
+                                                                                    │ benchmarks_baseline.txt │             benchmarks.txt             │
+                                                                                    │        allocs/op        │  allocs/op   vs base                   │
+Logger/zap-14                                                                                    0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+Logger/xlog-14                                                                                   0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+Advance_WithOperation/zap/create_logger_in_loop/with_operation_name-14                           1.000 ± 0%      1.000 ± 0%         ~ (p=1.000 n=10) ¹
+Advance_WithOperation/zap/create_logger_in_loop/with_operation_name_and_fields-14                3.000 ± 0%      3.000 ± 0%         ~ (p=1.000 n=10) ¹
+Advance_WithOperation/zap/reuse_logger/with_operation_name-14                                    0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+Advance_WithOperation/zap/reuse_logger/with_operation_name_and_fields-14                         0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+Advance_WithOperation/xlog/create_context_in_loop/with_operation_name-14                         2.000 ± 0%      4.000 ± 0%  +100.00% (p=0.000 n=10)
+Advance_WithOperation/xlog/create_context_in_loop/with_operation_name_and_fields-14              4.000 ± 0%      7.000 ± 0%   +75.00% (p=0.000 n=10)
+Advance_WithOperation/xlog/reuse_context/with_operation_name-14                                  0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+Advance_WithOperation/xlog/reuse_context/with_operation_name_and_fields-14                       0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+Advance_WithFields/zap/create_logger_in_loop-14                                                  2.000 ± 0%      2.000 ± 0%         ~ (p=1.000 n=10) ¹
+Advance_WithFields/zap/reuse_logger-14                                                           0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+Advance_WithFields/xlog/create_context_in_loop-14                                                3.000 ± 0%      5.000 ± 0%   +66.67% (p=0.000 n=10)
+Advance_WithFields/xlog/reuse_context-14                                                         0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+WithOperationSpan/without_fields-14                                                              5.000 ± 0%      7.000 ± 0%   +40.00% (p=0.000 n=10)
+WithOperationSpan/with_3_fields-14                                                               8.000 ± 0%     11.000 ± 0%   +37.50% (p=0.000 n=10)
+WithOperationSpan/with_10_fields-14                                                              11.00 ± 0%      14.00 ± 0%   +27.27% (p=0.000 n=10)
+SetSpanAttributes/single_attribute-14                                                            1.000 ± 0%      1.000 ± 0%         ~ (p=1.000 n=10) ¹
+SetSpanAttributes/3_attributes-14                                                                0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+SetSpanAttributes/10_attributes-14                                                               0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+SetSpanAttributes/no_span_in_context-14                                                          1.000 ± 0%      1.000 ± 0%         ~ (p=1.000 n=10) ¹
+AddSpanEvent/simple_event-14                                                                     0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+AddSpanEvent/no_span_in_context-14                                                               0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/empty_fields-14                                                        0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/3_string_fields-14                                                     1.000 ± 0%      1.000 ± 0%         ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/3_mixed_fields-14                                                      1.000 ± 0%      1.000 ± 0%         ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/10_mixed_fields-14                                                     1.000 ± 0%      1.000 ± 0%         ~ (p=1.000 n=10) ¹
+ConvertFieldsToAttributes/with_unsupported_types-14                                              1.000 ± 0%      1.000 ± 0%         ~ (p=1.000 n=10) ¹
+SpanFromContext/with_span-14                                                                     0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+SpanFromContext/without_span-14                                                                  0.000 ± 0%      0.000 ± 0%         ~ (p=1.000 n=10) ¹
+SpanCreation_Comparison/xlog.WithOperationSpan-14                                                8.000 ± 0%     11.000 ± 0%   +37.50% (p=0.000 n=10)
+SpanCreation_Comparison/manual_span_+_logger-14                                                  8.000 ± 0%     10.000 ± 0%   +25.00% (p=0.000 n=10)
+geomean                                                                                                     ²                 +10.52%                ²
+¹ all samples are equal
+² summaries must be >0 to compute geomean
