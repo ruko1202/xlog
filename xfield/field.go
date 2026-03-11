@@ -1,4 +1,5 @@
-package xlog
+// Package xfield provides structured field constructors for logging.
+package xfield
 
 import (
 	"fmt"
@@ -134,8 +135,8 @@ func Durations(key string, val []time.Duration) Field {
 	return Field{Key: key, Type: ArrayType, Interface: val}
 }
 
-// Err creates an error field with key "error".
-func Err(err error) Field {
+// Error creates an error field with key "error".
+func Error(err error) Field {
 	if err == nil {
 		return Field{Key: "error", Type: ErrorType, Interface: nil}
 	}

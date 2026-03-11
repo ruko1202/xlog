@@ -13,6 +13,8 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 func setupTestTracer(t *testing.T) *tracetest.SpanRecorder {
@@ -66,8 +68,8 @@ func TestWithOperationSpan(t *testing.T) {
 
 		// Create span with fields
 		ctx, span := WithOperationSpan(ctx, "payment-process",
-			String("user_id", "12345"),
-			Int("amount", 100),
+			xfield.String("user_id", "12345"),
+			xfield.Int("amount", 100),
 		)
 		defer span.End()
 
@@ -334,7 +336,7 @@ func TestMarkSpanError(t *testing.T) {
 
 		// Log error
 		testErr := errors.New("test error")
-		Error(ctx, "operation failed", Err(testErr))
+		Error(ctx, "operation failed", xfield.Error(testErr))
 
 		require.Equal(t, 1, logs.Len())
 
@@ -357,7 +359,7 @@ func TestMarkSpanError(t *testing.T) {
 		defer span.End()
 
 		// Log error without error field
-		Error(ctx, "operation failed", String("reason", "timeout"))
+		Error(ctx, "operation failed", xfield.String("reason", "timeout"))
 
 		require.Equal(t, 1, logs.Len())
 

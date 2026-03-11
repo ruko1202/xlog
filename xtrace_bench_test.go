@@ -9,6 +9,8 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.uber.org/zap"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 func setupBenchTracer() {
@@ -35,10 +37,10 @@ func BenchmarkWithOperationSpan(b *testing.B) {
 	})
 
 	b.Run("with 3 fields", func(b *testing.B) {
-		fields := []Field{
-			String("user_id", "12345"),
-			Int("count", 42),
-			Bool("active", true),
+		fields := []xfield.Field{
+			xfield.String("user_id", "12345"),
+			xfield.Int("count", 42),
+			xfield.Bool("active", true),
 		}
 
 		b.ReportAllocs()
@@ -51,17 +53,17 @@ func BenchmarkWithOperationSpan(b *testing.B) {
 	})
 
 	b.Run("with 10 fields", func(b *testing.B) {
-		fields := []Field{
-			String("field1", "value1"),
-			String("field2", "value2"),
-			String("field3", "value3"),
-			Int("field4", 1),
-			Int("field5", 2),
-			Int("field6", 3),
-			Bool("field7", true),
-			Bool("field8", false),
-			Float64("field9", 3.14),
-			Float64("field10", 2.71),
+		fields := []xfield.Field{
+			xfield.String("field1", "value1"),
+			xfield.String("field2", "value2"),
+			xfield.String("field3", "value3"),
+			xfield.Int("field4", 1),
+			xfield.Int("field5", 2),
+			xfield.Int("field6", 3),
+			xfield.Bool("field7", true),
+			xfield.Bool("field8", false),
+			xfield.Float64("field9", 3.14),
+			xfield.Float64("field10", 2.71),
 		}
 
 		b.ReportAllocs()
@@ -169,7 +171,7 @@ func BenchmarkAddSpanEvent(b *testing.B) {
 
 func BenchmarkConvertFieldsToAttributes(b *testing.B) {
 	b.Run("empty fields", func(b *testing.B) {
-		fields := []Field{}
+		fields := []xfield.Field{}
 
 		b.ReportAllocs()
 		b.ResetTimer()
@@ -180,10 +182,10 @@ func BenchmarkConvertFieldsToAttributes(b *testing.B) {
 	})
 
 	b.Run("3 string fields", func(b *testing.B) {
-		fields := []Field{
-			String("key1", "value1"),
-			String("key2", "value2"),
-			String("key3", "value3"),
+		fields := []xfield.Field{
+			xfield.String("key1", "value1"),
+			xfield.String("key2", "value2"),
+			xfield.String("key3", "value3"),
 		}
 
 		b.ReportAllocs()
@@ -195,10 +197,10 @@ func BenchmarkConvertFieldsToAttributes(b *testing.B) {
 	})
 
 	b.Run("3 mixed fields", func(b *testing.B) {
-		fields := []Field{
-			String("string", "value"),
-			Int("int", 42),
-			Bool("bool", true),
+		fields := []xfield.Field{
+			xfield.String("string", "value"),
+			xfield.Int("int", 42),
+			xfield.Bool("bool", true),
 		}
 
 		b.ReportAllocs()
@@ -210,17 +212,17 @@ func BenchmarkConvertFieldsToAttributes(b *testing.B) {
 	})
 
 	b.Run("10 mixed fields", func(b *testing.B) {
-		fields := []Field{
-			String("field1", "value1"),
-			String("field2", "value2"),
-			String("field3", "value3"),
-			Int("field4", 1),
-			Int("field5", 2),
-			Int("field6", 3),
-			Bool("field7", true),
-			Bool("field8", false),
-			Float64("field9", 3.14),
-			Float64("field10", 2.71),
+		fields := []xfield.Field{
+			xfield.String("field1", "value1"),
+			xfield.String("field2", "value2"),
+			xfield.String("field3", "value3"),
+			xfield.Int("field4", 1),
+			xfield.Int("field5", 2),
+			xfield.Int("field6", 3),
+			xfield.Bool("field7", true),
+			xfield.Bool("field8", false),
+			xfield.Float64("field9", 3.14),
+			xfield.Float64("field10", 2.71),
 		}
 
 		b.ReportAllocs()
@@ -232,11 +234,11 @@ func BenchmarkConvertFieldsToAttributes(b *testing.B) {
 	})
 
 	b.Run("with unsupported types", func(b *testing.B) {
-		fields := []Field{
-			String("string", "value"),
-			Any("any", map[string]string{"key": "value"}),
-			Int("int", 42),
-			Any("any2", []string{"a", "b", "c"}),
+		fields := []xfield.Field{
+			xfield.String("string", "value"),
+			xfield.Any("any", map[string]string{"key": "value"}),
+			xfield.Int("int", 42),
+			xfield.Any("any2", []string{"a", "b", "c"}),
 		}
 
 		b.ReportAllocs()
@@ -282,10 +284,10 @@ func BenchmarkSpanCreation_Comparison(b *testing.B) {
 	ctx := ContextWithLogger(context.Background(), NewZapAdapter(zapLogger))
 	tracer := otel.GetTracerProvider().Tracer("benchmark")
 
-	fields := []Field{
-		String("user_id", "12345"),
-		Int("count", 42),
-		Bool("active", true),
+	fields := []xfield.Field{
+		xfield.String("user_id", "12345"),
+		xfield.Int("count", 42),
+		xfield.Bool("active", true),
 	}
 
 	b.Run("xlog.WithOperationSpan", func(b *testing.B) {

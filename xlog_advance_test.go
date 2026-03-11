@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 func TestWithOperation(t *testing.T) {
@@ -32,8 +34,8 @@ func TestWithOperation(t *testing.T) {
 
 		// Create context with operation and fields
 		ctx = WithOperation(ctx, "user-auth",
-			String("user_id", "12345"),
-			String("session_id", "sess_xyz"),
+			xfield.String("user_id", "12345"),
+			xfield.String("session_id", "sess_xyz"),
 		)
 
 		// Log something
@@ -95,8 +97,8 @@ func TestWithFields(t *testing.T) {
 
 		// Add fields to context
 		ctx = WithFields(ctx,
-			String("request_id", "req-123"),
-			String("user_id", "user-456"),
+			xfield.String("request_id", "req-123"),
+			xfield.String("user_id", "user-456"),
 		)
 
 		// Log something
@@ -119,7 +121,7 @@ func TestWithFields(t *testing.T) {
 		ctx := ContextWithLogger(context.Background(), logger)
 
 		// Add fields
-		ctx = WithFields(ctx, String("trace_id", "trace-xyz"))
+		ctx = WithFields(ctx, xfield.String("trace_id", "trace-xyz"))
 
 		// Multiple log calls
 		Info(ctx, "step 1")
@@ -140,10 +142,10 @@ func TestWithFields(t *testing.T) {
 		ctx := ContextWithLogger(context.Background(), logger)
 
 		// Add first set of fields
-		ctx = WithFields(ctx, String("key1", "value1"))
+		ctx = WithFields(ctx, xfield.String("key1", "value1"))
 
 		// Add more fields
-		ctx = WithFields(ctx, String("key2", "value2"))
+		ctx = WithFields(ctx, xfield.String("key2", "value2"))
 
 		// Log
 		Info(ctx, "message")
@@ -167,7 +169,7 @@ func TestWithFields(t *testing.T) {
 		ctx := context.Background() // No logger in context
 
 		// Add fields
-		ctx = WithFields(ctx, String("field", "value"))
+		ctx = WithFields(ctx, xfield.String("field", "value"))
 
 		// Log
 		Info(ctx, "test message")
@@ -183,10 +185,10 @@ func TestWithFields(t *testing.T) {
 		ctx := ContextWithLogger(context.Background(), logger)
 
 		ctx = WithFields(ctx,
-			String("string", "value"),
-			Int("int", 42),
-			Bool("bool", true),
-			Float64("float", 3.14),
+			xfield.String("string", "value"),
+			xfield.Int("int", 42),
+			xfield.Bool("bool", true),
+			xfield.Float64("float", 3.14),
 		)
 
 		Info(ctx, "test")

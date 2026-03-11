@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 const (
@@ -71,7 +73,7 @@ func testAdapter(t *testing.T, initAdapter func(t *testing.T) (Logger, logObserv
 	t.Run("Debug level", func(t *testing.T) {
 		adapter, getLogsFunc := initAdapter(t)
 
-		adapter.Debug("debug message", String("key", "value"))
+		adapter.Debug("debug message", xfield.String("key", "value"))
 
 		entries := getLogsFunc()
 		require.Len(t, entries, 1)
@@ -83,7 +85,7 @@ func testAdapter(t *testing.T, initAdapter func(t *testing.T) (Logger, logObserv
 	t.Run("Info level", func(t *testing.T) {
 		adapter, getLogsFunc := initAdapter(t)
 
-		adapter.Info("info message", Int("count", 42))
+		adapter.Info("info message", xfield.Int("count", 42))
 
 		entries := getLogsFunc()
 		require.Len(t, entries, 1)
@@ -94,7 +96,7 @@ func testAdapter(t *testing.T, initAdapter func(t *testing.T) (Logger, logObserv
 	t.Run("Warn level", func(t *testing.T) {
 		adapter, getLogsFunc := initAdapter(t)
 
-		adapter.Warn("warning message", Bool("flag", true))
+		adapter.Warn("warning message", xfield.Bool("flag", true))
 
 		entries := getLogsFunc()
 		require.Len(t, entries, 1)
@@ -106,7 +108,7 @@ func testAdapter(t *testing.T, initAdapter func(t *testing.T) (Logger, logObserv
 		adapter, getLogsFunc := initAdapter(t)
 
 		testErr := errors.New("test error")
-		adapter.Error("error message", Err(testErr))
+		adapter.Error("error message", xfield.Error(testErr))
 
 		entries := getLogsFunc()
 		require.Len(t, entries, 1)
@@ -119,7 +121,7 @@ func testAdapter(t *testing.T, initAdapter func(t *testing.T) (Logger, logObserv
 		adapter, getLogsFunc := initAdapter(t)
 
 		testErr := errors.New("test error")
-		adapter.Fatal("error message", Err(testErr))
+		adapter.Fatal("error message", xfield.Error(testErr))
 
 		entries := getLogsFunc()
 		require.Len(t, entries, 1)
@@ -132,7 +134,7 @@ func testAdapter(t *testing.T, initAdapter func(t *testing.T) (Logger, logObserv
 		adapter, getLogsFunc := initAdapter(t)
 
 		testErr := errors.New("test error")
-		adapter.Panic("error message", Err(testErr))
+		adapter.Panic("error message", xfield.Error(testErr))
 
 		entries := getLogsFunc()
 		require.Len(t, entries, 1)
@@ -144,7 +146,7 @@ func testAdapter(t *testing.T, initAdapter func(t *testing.T) (Logger, logObserv
 	t.Run("With creates child logger", func(t *testing.T) {
 		adapter, getLogsFunc := initAdapter(t)
 
-		childAdapter := adapter.With(String("service", "test"))
+		childAdapter := adapter.With(xfield.String("service", "test"))
 		childAdapter.Info("test message")
 
 		entries := getLogsFunc()
@@ -168,12 +170,12 @@ func testAdapter(t *testing.T, initAdapter func(t *testing.T) (Logger, logObserv
 
 		now := time.Now()
 		adapter.Info("complex message",
-			String("str", "value"),
-			Int64("int", 123),
-			Float64("float", 3.14),
-			Bool("bool", true),
-			Time("time", now),
-			Duration("duration", 5*time.Second),
+			xfield.String("str", "value"),
+			xfield.Int64("int", 123),
+			xfield.Float64("float", 3.14),
+			xfield.Bool("bool", true),
+			xfield.Time("time", now),
+			xfield.Duration("duration", 5*time.Second),
 		)
 
 		entries := getLogsFunc()

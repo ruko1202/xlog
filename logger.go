@@ -6,6 +6,8 @@ import (
 
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 // Debug logs a Debug level message with structured fields.
@@ -14,7 +16,7 @@ import (
 // Example:
 //
 //	xlog.Debug(ctx, "debug message", xlog.String("key", "value"))
-func Debug(ctx context.Context, msg string, fields ...Field) {
+func Debug(ctx context.Context, msg string, fields ...xfield.Field) {
 	logger := loggerFromContext(ctx)
 	logger.Debug(msg, withMetadataFields(ctx, fields)...)
 }
@@ -35,7 +37,7 @@ func Debugf(ctx context.Context, template string, args ...any) {
 // Example:
 //
 //	xlog.Info(ctx, "request processed", xlog.Duration("took", time.Second))
-func Info(ctx context.Context, msg string, fields ...Field) {
+func Info(ctx context.Context, msg string, fields ...xfield.Field) {
 	logger := loggerFromContext(ctx)
 	logger.Info(msg, withMetadataFields(ctx, fields)...)
 }
@@ -56,7 +58,7 @@ func Infof(ctx context.Context, template string, args ...any) {
 // Example:
 //
 //	xlog.Warn(ctx, "slow query", xlog.Duration("took", time.Second*5))
-func Warn(ctx context.Context, msg string, fields ...Field) {
+func Warn(ctx context.Context, msg string, fields ...xfield.Field) {
 	markSpanError(ctx, msg, fields)
 
 	logger := loggerFromContext(ctx)
@@ -78,8 +80,8 @@ func Warnf(ctx context.Context, template string, args ...any) {
 //
 // Example:
 //
-//	xlog.Error(ctx, "database query error", xlog.Err(err))
-func Error(ctx context.Context, msg string, fields ...Field) {
+//	xlog.Error(ctx, "database query error", xlog.Error(err))
+func Error(ctx context.Context, msg string, fields ...xfield.Field) {
 	markSpanError(ctx, msg, fields)
 
 	logger := loggerFromContext(ctx)
@@ -102,8 +104,8 @@ func Errorf(ctx context.Context, template string, args ...any) {
 //
 // Example:
 //
-//	xlog.Fatal(ctx, "critical error", xlog.Err(err))
-func Fatal(ctx context.Context, msg string, fields ...Field) {
+//	xlog.Fatal(ctx, "critical error", xlog.Error(err))
+func Fatal(ctx context.Context, msg string, fields ...xfield.Field) {
 	markSpanError(ctx, msg, fields)
 
 	logger := loggerFromContext(ctx)
@@ -127,7 +129,7 @@ func Fatalf(ctx context.Context, template string, args ...any) {
 // Example:
 //
 //	xlog.Panic(ctx, "unexpected state", xlog.String("state", state))
-func Panic(ctx context.Context, msg string, fields ...Field) {
+func Panic(ctx context.Context, msg string, fields ...xfield.Field) {
 	markSpanError(ctx, msg, fields)
 
 	logger := loggerFromContext(ctx)
@@ -144,7 +146,7 @@ func Panicf(ctx context.Context, template string, args ...any) {
 	Panic(ctx, fmt.Sprintf(template, args...))
 }
 
-func withMetadataFields(ctx context.Context, fields []Field) []Field {
+func withMetadataFields(ctx context.Context, fields []xfield.Field) []xfield.Field {
 	traceFields := traceMetadataFields(ctx)
 	if len(traceFields) == 0 {
 		return fields
@@ -152,30 +154,30 @@ func withMetadataFields(ctx context.Context, fields []Field) []Field {
 
 	totalLen := len(fields) + len(traceFields)
 
-	result := make([]Field, 0, totalLen)
+	result := make([]xfield.Field, 0, totalLen)
 	result = append(result, fields...)
 	result = append(result, traceFields...)
 
 	return result
 }
 
-func traceMetadataFields(ctx context.Context) []Field {
+func traceMetadataFields(ctx context.Context) []xfield.Field {
 	spanCtx := trace.SpanContextFromContext(ctx)
 	if spanCtx.HasTraceID() {
-		return []Field{
-			String("trace_id", spanCtx.TraceID().String()),
-			String("span_id", spanCtx.SpanID().String()),
+		return []xfield.Field{
+			xfield.String("trace_id", spanCtx.TraceID().String()),
+			xfield.String("span_id", spanCtx.SpanID().String()),
 		}
 	}
 
 	return nil
 }
 
-func markSpanError(ctx context.Context, msg string, fields []Field) {
+func markSpanError(ctx context.Context, msg string, fields []xfield.Field) {
 	span := SpanFromContext(ctx)
 	if span.IsRecording() {
 		for _, f := range fields {
-			if f.Type == ErrorType {
+			if f.Type == xfield.ErrorType {
 				if err, ok := f.Interface.(error); ok && err != nil {
 					span.SetStatus(codes.Error, msg)
 					span.RecordError(err,

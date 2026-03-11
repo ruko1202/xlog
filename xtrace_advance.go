@@ -6,6 +6,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 // WithOperationSpan creates a new span for the given operation and attaches it to the context.
@@ -20,7 +22,7 @@ import (
 //	    xlog.String("payment_id", "pay_xyz"),
 //	)
 //	defer span.End()
-func WithOperationSpan(ctx context.Context, operation string, fields ...Field) (context.Context, trace.Span) {
+func WithOperationSpan(ctx context.Context, operation string, fields ...xfield.Field) (context.Context, trace.Span) {
 	logger := loggerFromContext(ctx).
 		Named(operation).
 		With(fields...)

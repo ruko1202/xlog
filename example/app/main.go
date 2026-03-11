@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ruko1202/xlog"
+	"github.com/ruko1202/xlog/xfield"
 )
 
 // Global objects for the package
@@ -40,13 +41,14 @@ func main() {
 		zap.WithCaller(true),
 	)
 	defer logger.Sync()
+	xlog.ReplaceGlobalLogger(xlog.NewZapAdapter(logger))
 	zap.ReplaceGlobals(logger)
 
-	ctx = xlog.ContextWithLogger(ctx, logger)
+	ctx = xlog.ContextWithLogger(ctx, xlog.NewZapAdapter(logger))
 
 	shutdown, err := initOTel(ctx)
 	if err != nil {
-		xlog.Panic(ctx, "failed to create metric exporter", zap.Error(err))
+		xlog.Panic(ctx, "failed to create metric exporter", xfield.Error(err))
 	}
 	defer shutdown(ctx)
 	xlog.ReplaceTracerName(appName)
@@ -105,6 +107,6 @@ func initMetrics(ctx context.Context, meter metric.Meter) {
 	var err error
 	counter, err = meter.Int64Counter("http_requests_total", metric.WithDescription("Total HTTP requests"))
 	if err != nil {
-		xlog.Panic(ctx, "failed to init counter", zap.Error(err))
+		xlog.Panic(ctx, "failed to init counter", xfield.Error(err))
 	}
 }

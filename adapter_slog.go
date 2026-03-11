@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"os"
 	"time"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 // SlogOption is a function that configures a SlogAdapter.
@@ -63,28 +65,28 @@ func NewSlogAdapterWithContext(ctx context.Context, logger *slog.Logger, options
 }
 
 // Debug logs a debug-level message.
-func (s *SlogAdapter) Debug(msg string, fields ...Field) {
+func (s *SlogAdapter) Debug(msg string, fields ...xfield.Field) {
 	s.logger.DebugContext(s.ctx, msg, fieldsToSlogAttrs(fields)...)
 }
 
 // Info logs an info-level message.
-func (s *SlogAdapter) Info(msg string, fields ...Field) {
+func (s *SlogAdapter) Info(msg string, fields ...xfield.Field) {
 	s.logger.InfoContext(s.ctx, msg, fieldsToSlogAttrs(fields)...)
 }
 
 // Warn logs a warning-level message.
-func (s *SlogAdapter) Warn(msg string, fields ...Field) {
+func (s *SlogAdapter) Warn(msg string, fields ...xfield.Field) {
 	s.logger.WarnContext(s.ctx, msg, fieldsToSlogAttrs(fields)...)
 }
 
 // Error logs an error-level message.
-func (s *SlogAdapter) Error(msg string, fields ...Field) {
+func (s *SlogAdapter) Error(msg string, fields ...xfield.Field) {
 	s.logger.ErrorContext(s.ctx, msg, fieldsToSlogAttrs(fields)...)
 }
 
 // Fatal logs a fatal-level message and terminates the program.
 // Note: slog doesn't have a Fatal level, so we log as Error with a special marker and exit.
-func (s *SlogAdapter) Fatal(msg string, fields ...Field) {
+func (s *SlogAdapter) Fatal(msg string, fields ...xfield.Field) {
 	attrs := fieldsToSlogAttrs(fields)
 	attrs = append(attrs, slog.String("_level", "fatal"))
 	s.logger.ErrorContext(s.ctx, msg, attrs...)
@@ -93,7 +95,7 @@ func (s *SlogAdapter) Fatal(msg string, fields ...Field) {
 
 // Panic logs a panic-level message and panics.
 // Note: slog doesn't have a Panic level, so we log as Error with a special marker and panic.
-func (s *SlogAdapter) Panic(msg string, fields ...Field) {
+func (s *SlogAdapter) Panic(msg string, fields ...xfield.Field) {
 	attrs := fieldsToSlogAttrs(fields)
 	attrs = append(attrs, slog.String("_level", "panic"))
 	s.logger.ErrorContext(s.ctx, msg, attrs...)
@@ -101,7 +103,7 @@ func (s *SlogAdapter) Panic(msg string, fields ...Field) {
 }
 
 // With creates a child logger with pre-attached fields.
-func (s *SlogAdapter) With(fields ...Field) Logger {
+func (s *SlogAdapter) With(fields ...xfield.Field) Logger {
 	return s.WithContext(s.ctx, fields...)
 }
 
@@ -129,7 +131,7 @@ func (s *SlogAdapter) Unwrap() *slog.Logger {
 }
 
 // WithContext returns a new adapter with the given context.
-func (s *SlogAdapter) WithContext(ctx context.Context, fields ...Field) Logger {
+func (s *SlogAdapter) WithContext(ctx context.Context, fields ...xfield.Field) Logger {
 	return &SlogAdapter{
 		logger:    s.logger.With(fieldsToSlogAttrs(fields)...),
 		ctx:       ctx,
@@ -139,7 +141,7 @@ func (s *SlogAdapter) WithContext(ctx context.Context, fields ...Field) Logger {
 }
 
 // fieldsToSlogAttrs converts xlog.Field slice to slog.Attr slice.
-func fieldsToSlogAttrs(fields []Field) []any {
+func fieldsToSlogAttrs(fields []xfield.Field) []any {
 	if len(fields) == 0 {
 		return nil
 	}
@@ -158,42 +160,42 @@ func fieldsToSlogAttrs(fields []Field) []any {
 }
 
 // fieldToSlogAttr converts a single xlog.Field to slog.Attr.
-func fieldToSlogAttr(f Field) slog.Attr {
+func fieldToSlogAttr(f xfield.Field) slog.Attr {
 	switch f.Type {
-	case StringType:
+	case xfield.StringType:
 		return slog.String(f.Key, f.String)
 
-	case Int64Type:
+	case xfield.Int64Type:
 		return slog.Int64(f.Key, f.Integer)
 
-	case Uint64Type:
+	case xfield.Uint64Type:
 		// #nosec G115 - safe conversion as Uint64 values are stored as int64
 		return slog.Uint64(f.Key, uint64(f.Integer))
 
-	case Float64Type:
+	case xfield.Float64Type:
 		return slog.Float64(f.Key, f.Float)
 
-	case BoolType:
+	case xfield.BoolType:
 		return slog.Bool(f.Key, f.Integer == 1)
 
-	case TimeType:
+	case xfield.TimeType:
 		if t, ok := f.Interface.(time.Time); ok {
 			return slog.Time(f.Key, t)
 		}
 		// Fallback: use nanoseconds stored in Integer
 		return slog.Time(f.Key, time.Unix(0, f.Integer))
 
-	case DurationType:
+	case xfield.DurationType:
 		return slog.Duration(f.Key, time.Duration(f.Integer))
 
-	case ErrorType:
+	case xfield.ErrorType:
 		if err, ok := f.Interface.(error); ok && err != nil {
 			return slog.Any(f.Key, err)
 		}
 		// Fallback for nil errors - skip
 		return slog.Attr{}
 
-	case ArrayType, BinaryType, ObjectType, AnyType:
+	case xfield.ArrayType, xfield.BinaryType, xfield.ObjectType, xfield.AnyType:
 		return slog.Any(f.Key, f.Interface)
 
 	default:

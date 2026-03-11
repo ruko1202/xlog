@@ -8,80 +8,82 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 func TestFieldToSlogAttr(t *testing.T) {
 	t.Run("converts all basic types", func(t *testing.T) {
 		for _, tc := range []struct {
 			name  string
-			field Field
+			field xfield.Field
 		}{
 			{
 				name:  "String",
-				field: String("key", "value"),
+				field: xfield.String("key", "value"),
 			}, {
 				name:  "Int64",
-				field: Int64("key", 123),
+				field: xfield.Int64("key", 123),
 			}, {
 				name:  "Uint64",
-				field: Uint64("key", 456),
+				field: xfield.Uint64("key", 456),
 			}, {
 				name:  "Float64",
-				field: Float64("key", 3.14),
+				field: xfield.Float64("key", 3.14),
 			}, {
 				name:  "Bool",
-				field: Bool("key", true),
+				field: xfield.Bool("key", true),
 			}, {
 				name:  "Time",
-				field: Time("key", time.Now()),
+				field: xfield.Time("key", time.Now()),
 			}, {
 				name:  "Duration",
-				field: Duration("key", 5*time.Second),
+				field: xfield.Duration("key", 5*time.Second),
 			}, {
 				name:  "Error",
-				field: Err(errors.New("test")),
+				field: xfield.Error(errors.New("test")),
 			}, {
 				name:  "Binary",
-				field: Binary("key", []byte("a")),
+				field: xfield.Binary("key", []byte("a")),
 			}, {
 				name:  "Any",
-				field: Any("key", []byte("a")),
+				field: xfield.Any("key", []byte("a")),
 			}, {
 				name:  "Object",
-				field: Object("key", []byte("a")),
+				field: xfield.Object("key", []byte("a")),
 			}, {
 				name:  "Strings",
-				field: Strings("key", []string{"a", "b", "c"}),
+				field: xfield.Strings("key", []string{"a", "b", "c"}),
 			}, {
 				name:  "Ints",
-				field: Ints("key", []int{1, 2, 3}),
+				field: xfield.Ints("key", []int{1, 2, 3}),
 			}, {
 				name:  "Int32s",
-				field: Int32s("key", []int32{1, 2, 3}),
+				field: xfield.Int32s("key", []int32{1, 2, 3}),
 			}, {
 				name:  "Int64s",
-				field: Int64s("key", []int64{1, 2, 3}),
+				field: xfield.Int64s("key", []int64{1, 2, 3}),
 			}, {
 				name:  "UInts",
-				field: UInts("key", []uint{1, 2, 3}),
+				field: xfield.UInts("key", []uint{1, 2, 3}),
 			}, {
 				name:  "UInt32s",
-				field: UInt32s("key", []uint32{1, 2, 3}),
+				field: xfield.UInt32s("key", []uint32{1, 2, 3}),
 			}, {
 				name:  "UInt64s",
-				field: UInt64s("key", []uint64{1, 2, 3}),
+				field: xfield.UInt64s("key", []uint64{1, 2, 3}),
 			}, {
 				name:  "Float32s",
-				field: Float32s("key", []float32{1.1, 2.2, 3.3}),
+				field: xfield.Float32s("key", []float32{1.1, 2.2, 3.3}),
 			}, {
 				name:  "Float64s",
-				field: Float64s("key", []float64{1.1, 2.2, 3.3}),
+				field: xfield.Float64s("key", []float64{1.1, 2.2, 3.3}),
 			}, {
 				name:  "Bools",
-				field: Bools("key", []bool{true, false}),
+				field: xfield.Bools("key", []bool{true, false}),
 			}, {
 				name:  "Durations",
-				field: Durations("key", []time.Duration{time.Second, time.Millisecond}),
+				field: xfield.Durations("key", []time.Duration{time.Second, time.Millisecond}),
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
@@ -94,7 +96,7 @@ func TestFieldToSlogAttr(t *testing.T) {
 
 func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 	t.Run("String type", func(t *testing.T) {
-		field := String("name", "test")
+		field := xfield.String("name", "test")
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "name", attr.Key)
@@ -102,7 +104,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 	})
 
 	t.Run("Int64 type", func(t *testing.T) {
-		field := Int64("count", 42)
+		field := xfield.Int64("count", 42)
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "count", attr.Key)
@@ -110,7 +112,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 	})
 
 	t.Run("Uint64 type", func(t *testing.T) {
-		field := Uint64("id", 100)
+		field := xfield.Uint64("id", 100)
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "id", attr.Key)
@@ -118,7 +120,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 	})
 
 	t.Run("Float64 type", func(t *testing.T) {
-		field := Float64("pi", 3.14159)
+		field := xfield.Float64("pi", 3.14159)
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "pi", attr.Key)
@@ -126,7 +128,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 	})
 
 	t.Run("Bool type", func(t *testing.T) {
-		field := Bool("active", true)
+		field := xfield.Bool("active", true)
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "active", attr.Key)
@@ -135,7 +137,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 
 	t.Run("Time type", func(t *testing.T) {
 		now := time.Now()
-		field := Time("timestamp", now)
+		field := xfield.Time("timestamp", now)
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "timestamp", attr.Key)
@@ -144,7 +146,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 
 	t.Run("Duration type", func(t *testing.T) {
 		dur := 5 * time.Second
-		field := Duration("elapsed", dur)
+		field := xfield.Duration("elapsed", dur)
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "elapsed", attr.Key)
@@ -153,7 +155,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 
 	t.Run("Error type with valid error", func(t *testing.T) {
 		err := errors.New("test error")
-		field := Err(err)
+		field := xfield.Error(err)
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "error", attr.Key)
@@ -161,7 +163,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 	})
 
 	t.Run("Error type with nil error", func(t *testing.T) {
-		field := Err(nil)
+		field := xfield.Error(nil)
 		attr := fieldToSlogAttr(field)
 
 		// Should return empty attr for nil errors
@@ -170,7 +172,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 
 	t.Run("Binary type", func(t *testing.T) {
 		data := []byte("hello")
-		field := Binary("data", data)
+		field := xfield.Binary("data", data)
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "data", attr.Key)
@@ -179,7 +181,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 
 	t.Run("Any type", func(t *testing.T) {
 		value := map[string]string{"key": "value"}
-		field := Any("metadata", value)
+		field := xfield.Any("metadata", value)
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "metadata", attr.Key)
@@ -187,7 +189,7 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 	})
 
 	t.Run("Array types", func(t *testing.T) {
-		field := Strings("tags", []string{"go", "logging", "slog"})
+		field := xfield.Strings("tags", []string{"go", "logging", "slog"})
 		attr := fieldToSlogAttr(field)
 
 		assert.Equal(t, "tags", attr.Key)
@@ -197,10 +199,10 @@ func TestFieldToSlogAttr_TypeConversions(t *testing.T) {
 
 func TestFieldsToSlogAttrs(t *testing.T) {
 	t.Run("converts multiple fields", func(t *testing.T) {
-		fields := []Field{
-			String("name", "test"),
-			Int64("count", 42),
-			Bool("active", true),
+		fields := []xfield.Field{
+			xfield.String("name", "test"),
+			xfield.Int64("count", 42),
+			xfield.Bool("active", true),
 		}
 
 		attrs := fieldsToSlogAttrs(fields)
@@ -229,9 +231,9 @@ func TestFieldsToSlogAttrs(t *testing.T) {
 	})
 
 	t.Run("skips fields with empty keys", func(t *testing.T) {
-		fields := []Field{
-			String("valid", "test"),
-			Err(nil), // This will produce empty key
+		fields := []xfield.Field{
+			xfield.String("valid", "test"),
+			xfield.Error(nil), // This will produce empty key
 		}
 
 		attrs := fieldsToSlogAttrs(fields)

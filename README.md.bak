@@ -11,11 +11,10 @@ A wrapper around [zap](https://github.com/uber-go/zap) for context-aware logging
 
 - Context-aware logging - logger is extracted from context
 - Global logger fallback support with thread-safe replacement
-- **Structured logging via `field` package** - clear separation between logging and field constructors
-- Backend-agnostic field types - works with Zap, slog, or custom loggers
+- Structured logging via zap.Field
 - Printf-style formatting (Debugf, Infof, etc.)
 - All logging levels: Debug, Info, Warn, Error, Fatal, Panic
-- Zero allocation when logger is not in context (uses noop adapter)
+- Zero allocation when logger is not in context (uses zap.NewNop())
 - **OpenTelemetry integration** - span management with automatic logger enrichment
 - Distributed tracing support with span creation, events, and attributes
 
@@ -35,10 +34,9 @@ For a complete working example, see [example/app](example/app/main.go).
 package main
 
 import (
-	"context"
-	"github.com/ruko1202/xlog"
-	"github.com/ruko1202/xlog/xfield"
-	"go.uber.org/zap"
+    "context"
+    "github.com/ruko1202/xlog"
+    "go.uber.org/zap"
 )
 
 const (
@@ -46,17 +44,17 @@ const (
 )
 
 func main() {
-	// Create logger and wrap it in adapter
-	logger, _ := zap.NewProduction()
-	defer logger.Sync()
+    // Create logger
+    logger, _ := zap.NewProduction()
+    defer logger.Sync()
 
-	// Add logger to context
-	ctx := context.Background()
-	ctx = xlog.ContextWithLogger(ctx, xlog.NewZapAdapter(logger))
+    // Add logger to context
+    ctx := context.Background()
+    ctx = xlog.ContextWithLogger(ctx, logger)
 
-	// Use logging
-	xlog.Infof(ctx, "application `%s` started", appName)
-	xlog.Debug(ctx, "debug information", field.String("version", "1.0.0"))
+    // Use logging
+    xlog.Infof(ctx, "application `%s` started", appName)
+    xlog.Debug(ctx, "debug information", zap.String("version", "1.0.0"))
 }
 ```
 
@@ -612,8 +610,8 @@ For one-off log statements, pass fields directly (most efficient):
 ```go
 // ✅ BEST: 0 allocations
 xlog.Info(ctx, "processing order",
-    field.String("order_id", orderID),
-    field.String("status", "pending"),
+    xlog.String("order_id", orderID),
+    xlog.String("status", "pending"),
 )
 ```
 
@@ -624,8 +622,8 @@ When logging multiple times with the same fields, create enriched context once:
 ```go
 // ✅ GOOD: Create context once, reuse many times
 ctx = xlog.WithFields(ctx,
-    field.String("user_id", userID),
-    field.String("session_id", sessionID),
+    xlog.String("user_id", userID),
+    xlog.String("session_id", sessionID),
 )
 
 // All subsequent logs include these fields with 0 allocations
@@ -641,13 +639,13 @@ xlog.Info(ctx, "session started")  // 0 allocs
 ```go
 // ✅ WHEN TO USE: You need operation in logger namespace
 ctx = xlog.WithOperation(ctx, "payment-processor",
-    field.String("user_id", userID),
+    xlog.String("user_id", userID),
 )
 
 // ⚠️ ALTERNATIVE: Use WithFields + operation field (same performance)
 ctx = xlog.WithFields(ctx,
-    field.String("operation", "payment-processor"),
-    field.String("user_id", userID),
+    xlog.String("operation", "payment-processor"),
+    xlog.String("user_id", userID),
 )
 ```
 
@@ -681,8 +679,8 @@ xlog.Infof(ctx, "user %s logged in from IP %s", userID, ip)
 
 // ✅ Efficient and queryable
 xlog.Info(ctx, "user logged in",
-    field.String("user_id", userID),
-    field.String("ip", ip),
+    xlog.String("user_id", userID),
+    xlog.String("ip", ip),
 )
 ```
 

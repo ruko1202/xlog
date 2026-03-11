@@ -1,29 +1,31 @@
 package xlog
 
+import "github.com/ruko1202/xlog/xfield"
+
 // Logger is the interface that wraps the basic logging methods.
 // This interface allows xlog to work with any logging backend (zap, slog, logrus, etc).
 type Logger interface {
 	// Debug logs a debug-level message with structured fields.
-	Debug(msg string, fields ...Field)
+	Debug(msg string, fields ...xfield.Field)
 
 	// Info logs an info-level message with structured fields.
-	Info(msg string, fields ...Field)
+	Info(msg string, fields ...xfield.Field)
 
 	// Warn logs a warning-level message with structured fields.
-	Warn(msg string, fields ...Field)
+	Warn(msg string, fields ...xfield.Field)
 
 	// Error logs an error-level message with structured fields.
-	Error(msg string, fields ...Field)
+	Error(msg string, fields ...xfield.Field)
 
 	// Fatal logs a fatal-level message with structured fields and terminates the program.
-	Fatal(msg string, fields ...Field)
+	Fatal(msg string, fields ...xfield.Field)
 
 	// Panic logs a panic-level message with structured fields and panics.
-	Panic(msg string, fields ...Field)
+	Panic(msg string, fields ...xfield.Field)
 
 	// With creates a child logger with the given fields pre-attached.
 	// All subsequent logs from this logger will include these fields.
-	With(fields ...Field) Logger
+	With(fields ...xfield.Field) Logger
 
 	// Named creates a child logger with the given name appended.
 	// This is useful for adding operation or component names to logs.

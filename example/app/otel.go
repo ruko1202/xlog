@@ -12,9 +12,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.9.0"
-	"go.uber.org/zap"
 
 	"github.com/ruko1202/xlog"
+	"github.com/ruko1202/xlog/xfield"
 )
 
 // initOTel sets up everything: trace exporter and pull-based metric exporter
@@ -29,7 +29,7 @@ func initOTel(ctx context.Context) (func(context.Context) error, error) {
 
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
 		logger := xlog.LoggerFromContext(ctx)
-		logger.Error("ALERT: Internal OpenTelemetry error", zap.Error(err))
+		logger.Error("ALERT: Internal OpenTelemetry error", xfield.Error(err))
 	}))
 
 	// --- TRACES ---

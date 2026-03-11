@@ -4,10 +4,12 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 // fieldsToOtelAttributes converts xlog Fields directly to OpenTelemetry attributes.
-func fieldsToOtelAttributes(fields []Field) []attribute.KeyValue {
+func fieldsToOtelAttributes(fields []xfield.Field) []attribute.KeyValue {
 	if len(fields) == 0 {
 		return nil
 	}
@@ -35,10 +37,17 @@ func fieldsToOtelAttributes(fields []Field) []attribute.KeyValue {
 }
 
 // isFieldTypeConvertibleToAttribute checks if a field type can be converted to an attribute.
-func isConvertible(t FieldType) bool {
+func isConvertible(t xfield.FieldType) bool {
 	switch t {
-	case StringType, Int64Type, Uint64Type, Float64Type, BoolType,
-		TimeType, DurationType, ErrorType, ArrayType:
+	case xfield.StringType,
+		xfield.Int64Type,
+		xfield.Uint64Type,
+		xfield.Float64Type,
+		xfield.BoolType,
+		xfield.TimeType,
+		xfield.DurationType,
+		xfield.ErrorType,
+		xfield.ArrayType:
 		return true
 	default:
 		return false
@@ -48,29 +57,29 @@ func isConvertible(t FieldType) bool {
 // fieldToOtelAttribute converts a Field to OpenTelemetry attribute.KeyValue.
 //
 //nolint:gocyclo // switch on field types requires many cases
-func fieldToOtelAttribute(f Field) attribute.KeyValue {
+func fieldToOtelAttribute(f xfield.Field) attribute.KeyValue {
 	switch f.Type {
-	case StringType:
+	case xfield.StringType:
 		return attribute.String(f.Key, f.String)
-	case Int64Type, Uint64Type:
+	case xfield.Int64Type, xfield.Uint64Type:
 		return attribute.Int64(f.Key, f.Integer)
-	case Float64Type:
+	case xfield.Float64Type:
 		return attribute.Float64(f.Key, f.Float)
-	case BoolType:
+	case xfield.BoolType:
 		return attribute.Bool(f.Key, f.Integer == 1)
-	case TimeType:
+	case xfield.TimeType:
 		if t, ok := f.Interface.(time.Time); ok {
 			return attribute.String(f.Key, t.Format(time.RFC3339Nano))
 		}
 		return attribute.Int64(f.Key, f.Integer)
-	case DurationType:
+	case xfield.DurationType:
 		return attribute.String(f.Key, time.Duration(f.Integer).String())
-	case ErrorType:
+	case xfield.ErrorType:
 		if err, ok := f.Interface.(error); ok && err != nil {
 			return attribute.String(f.Key, err.Error())
 		}
 		return attribute.String(f.Key, f.String)
-	case ArrayType:
+	case xfield.ArrayType:
 		// Handle array types
 		switch v := f.Interface.(type) {
 		case []string:

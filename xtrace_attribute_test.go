@@ -8,13 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/ruko1202/xlog/xfield"
 )
 
 func TestConvertFieldsToAttributes(t *testing.T) {
 	t.Run("converts string fields", func(t *testing.T) {
-		fields := []Field{
-			String("key1", "value1"),
-			String("key2", "value2"),
+		fields := []xfield.Field{
+			xfield.String("key1", "value1"),
+			xfield.String("key2", "value2"),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -24,10 +26,10 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("converts integer fields", func(t *testing.T) {
-		fields := []Field{
-			Int("int", 42),
-			Int64("int64", 9999),
-			Int32("int32", 100),
+		fields := []xfield.Field{
+			xfield.Int("int", 42),
+			xfield.Int64("int64", 9999),
+			xfield.Int32("int32", 100),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -38,9 +40,9 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("converts bool fields", func(t *testing.T) {
-		fields := []Field{
-			Bool("bool1", true),
-			Bool("bool2", false),
+		fields := []xfield.Field{
+			xfield.Bool("bool1", true),
+			xfield.Bool("bool2", false),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -50,9 +52,9 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("converts float fields", func(t *testing.T) {
-		fields := []Field{
-			Float64("float64", 3.14),
-			Float64("another_float", 2.71),
+		fields := []xfield.Field{
+			xfield.Float64("float64", 3.14),
+			xfield.Float64("another_float", 2.71),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -64,16 +66,16 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("handles empty fields", func(t *testing.T) {
-		fields := []Field{}
+		fields := []xfield.Field{}
 
 		attrs := fieldsToOtelAttributes(fields)
 		assert.Nil(t, attrs)
 	})
 
 	t.Run("returns nil when all fields are unsupported", func(t *testing.T) {
-		fields := []Field{
-			Any("any1", map[string]string{"key": "value"}),
-			Any("any2", []string{"a", "b", "c"}),
+		fields := []xfield.Field{
+			xfield.Any("any1", map[string]string{"key": "value"}),
+			xfield.Any("any2", []string{"a", "b", "c"}),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -81,10 +83,10 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("ignores complex types", func(t *testing.T) {
-		fields := []Field{
-			String("string", "value"),
-			Any("any", map[string]string{"key": "value"}),
-			Int("int", 42),
+		fields := []xfield.Field{
+			xfield.String("string", "value"),
+			xfield.Any("any", map[string]string{"key": "value"}),
+			xfield.Int("int", 42),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -95,11 +97,11 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("handles mixed field types", func(t *testing.T) {
-		fields := []Field{
-			String("name", "test"),
-			Int("count", 10),
-			Bool("active", true),
-			Float64("rate", 0.95),
+		fields := []xfield.Field{
+			xfield.String("name", "test"),
+			xfield.Int("count", 10),
+			xfield.Bool("active", true),
+			xfield.Float64("rate", 0.95),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -112,8 +114,8 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 
 	t.Run("converts time fields", func(t *testing.T) {
 		now := time.Now()
-		fields := []Field{
-			Time("timestamp", now),
+		fields := []xfield.Field{
+			xfield.Time("timestamp", now),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -124,8 +126,8 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 
 	t.Run("converts duration fields", func(t *testing.T) {
 		dur := 5 * time.Second
-		fields := []Field{
-			Duration("elapsed", dur),
+		fields := []xfield.Field{
+			xfield.Duration("elapsed", dur),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -135,8 +137,8 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 
 	t.Run("converts error fields", func(t *testing.T) {
 		testErr := errors.New("test error")
-		fields := []Field{
-			Err(testErr),
+		fields := []xfield.Field{
+			xfield.Error(testErr),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -145,8 +147,8 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("converts uint64 fields", func(t *testing.T) {
-		fields := []Field{
-			Uint64("counter", 18446744073709551615),
+		fields := []xfield.Field{
+			xfield.Uint64("counter", 18446744073709551615),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -157,8 +159,8 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("converts string array fields", func(t *testing.T) {
-		fields := []Field{
-			Strings("tags", []string{"tag1", "tag2", "tag3"}),
+		fields := []xfield.Field{
+			xfield.Strings("tags", []string{"tag1", "tag2", "tag3"}),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -168,8 +170,8 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("converts int array fields", func(t *testing.T) {
-		fields := []Field{
-			Ints("numbers", []int{1, 2, 3}),
+		fields := []xfield.Field{
+			xfield.Ints("numbers", []int{1, 2, 3}),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -184,8 +186,8 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("converts int64 array fields", func(t *testing.T) {
-		fields := []Field{
-			Int64s("ids", []int64{100, 200, 300}),
+		fields := []xfield.Field{
+			xfield.Int64s("ids", []int64{100, 200, 300}),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -195,8 +197,8 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("converts float64 array fields", func(t *testing.T) {
-		fields := []Field{
-			Float64s("rates", []float64{1.1, 2.2, 3.3}),
+		fields := []xfield.Field{
+			xfield.Float64s("rates", []float64{1.1, 2.2, 3.3}),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -210,8 +212,8 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 	})
 
 	t.Run("converts bool array fields", func(t *testing.T) {
-		fields := []Field{
-			Bools("flags", []bool{true, false, true}),
+		fields := []xfield.Field{
+			xfield.Bools("flags", []bool{true, false, true}),
 		}
 
 		attrs := fieldsToOtelAttributes(fields)
@@ -223,16 +225,16 @@ func TestConvertFieldsToAttributes(t *testing.T) {
 
 func TestIsFieldTypeConvertibleToAttribute(t *testing.T) {
 	t.Run("supported types", func(t *testing.T) {
-		supportedTypes := []FieldType{
-			StringType,
-			Int64Type,
-			Uint64Type,
-			BoolType,
-			Float64Type,
-			TimeType,
-			DurationType,
-			ErrorType,
-			ArrayType,
+		supportedTypes := []xfield.FieldType{
+			xfield.StringType,
+			xfield.Int64Type,
+			xfield.Uint64Type,
+			xfield.BoolType,
+			xfield.Float64Type,
+			xfield.TimeType,
+			xfield.DurationType,
+			xfield.ErrorType,
+			xfield.ArrayType,
 		}
 
 		for _, ft := range supportedTypes {
@@ -241,10 +243,10 @@ func TestIsFieldTypeConvertibleToAttribute(t *testing.T) {
 	})
 
 	t.Run("unsupported types", func(t *testing.T) {
-		unsupportedTypes := []FieldType{
-			BinaryType,
-			ObjectType,
-			AnyType,
+		unsupportedTypes := []xfield.FieldType{
+			xfield.BinaryType,
+			xfield.ObjectType,
+			xfield.AnyType,
 		}
 
 		for _, ft := range unsupportedTypes {
