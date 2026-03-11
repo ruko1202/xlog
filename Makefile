@@ -84,35 +84,33 @@ test-cov:
 # Benchmarking and performance analysis
 # -------------------------------------
 
-# BENCHMARK_FILE - Target file for benchmark results
-# Default: benchmarks.txt
-BENCHMARK_FILE ?= benchmarks.txt
-
-# BASELINE_FILE - Baseline benchmark file for comparison
-# Default: benchmarks_baseline.txt
-BASELINE_FILE ?= benchmarks_baseline.txt
-
 # bench - Run full benchmark suite and save results
 # Options:
 #   -bench=.: Run all benchmarks
 #   -benchmem: Include memory allocation statistics
 #   -benchtime=3s: Run each benchmark for 3 seconds
 #   -run='^$': Don't run any tests (only benchmarks)
-# Output: BENCHMARK_FILE (default: benchmarks.txt)
-# Example: make bench BENCHMARK_FILE=my_benchmarks.txt
+# Output: file (default: benchmarks.txt)
+# Example: make .bench file=my_benchmarks.txt
+.PHONY: .bench
+.bench: file=
+.bench:
+	$(info Running benchmarks and saving to ${file}...)
+	@go test -bench=. -benchmem -benchtime=3s -run='^$$' | tee ${file}
+
+# bench - Save current benchmarks for future comparisons with baseline
+# This creates a baseline file that can be used with bench-compare
+# benchmarks.txt - target file for benchmark results
 .PHONY: bench
 bench:
-	$(info Running benchmarks and saving to $(BENCHMARK_FILE)...)
-	@go test -bench=. -benchmem -benchtime=3s -run='^$$' | tee $(BENCHMARK_FILE)
+	make .bench file=my_benchmarks.txt=benchmarks.txt
 
 # bench-baseline - Save current benchmarks as baseline for future comparisons
 # This creates a baseline file that can be used with bench-compare
-# Output: BASELINE_FILE (default: benchmarks_baseline.txt)
-# Example: make bench-baseline BASELINE_FILE=my_baseline.txt
+# benchmarks_baseline.txt - baseline benchmark file for comparison
 .PHONY: bench-baseline
 bench-baseline:
-	$(info Saving baseline benchmarks to $(BASELINE_FILE)...)
-	@go test -bench=. -benchmem -benchtime=3s -run='^$$' | tee $(BASELINE_FILE)
+	make .bench file=my_benchmarks.txt=benchmarks_baseline.txt
 
 # bench-compare - Compare current benchmarks with baseline
 # Requires benchstat to be installed (will auto-install if missing)
