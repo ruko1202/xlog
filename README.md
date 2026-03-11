@@ -561,89 +561,151 @@ See [.github/workflows/](.github/workflows/) for workflow configurations.
 
 ## Performance
 
-xlog uses zap as the underlying logger, which provides:
-
-- Zero allocation when using structured fields
-- High performance (structured logging is ~10x faster than fmt.Printf)
-- Minimal overhead when logger is not in context (~33ns per log call)
+xlog provides flexible logger abstraction through adapters (ZapAdapter, SlogAdapter), allowing you to switch between different logging backends while maintaining a consistent API.
 
 **📊 Benchmarking:** See [BENCHMARKING.md](./BENCHMARKING.md) for detailed performance guidelines and baseline metrics.
 
-### Performance Guidelines
+### Performance Characteristics
 
-To get the best performance from xlog:
+**Adapter Overhead:**
+The adapter layer introduces minimal overhead:
+- **Basic logging**: ~2ns/op, 0 allocations
+- **Context reuse**: ~2ns/op, 0 allocations (13% faster than baseline!)
+- **Context creation in loop**: +2-3 allocations per call (avoid this pattern)
 
-#### 1. Reuse Context
+**Key Performance Metrics:**
+- Logging with fields directly: ~2ns, 0 allocs
+- WithFields (reused context): ~2ns, 0 allocs
+- WithOperation (reused context): ~2ns, 0 allocs
+- WithOperationSpan: ~670ns, 7 allocs
 
-Always reuse context when possible to avoid allocations:
+### Performance Best Practices
+
+Follow these patterns to achieve optimal performance with zero allocations in hot paths:
+
+#### 1. ✅ CRITICAL: Always Reuse Context
+
+**The most important performance rule.** Creating context in a loop causes significant overhead:
 
 ```go
-// ❌ BAD: Creates new context on each iteration
+// ❌ ANTI-PATTERN: Creates 4-7 allocations per iteration!
 for i := 0; i < 1000; i++ {
-    ctx := xlog.WithOperation(baseCtx, "process-item")
+    ctx := xlog.WithOperation(baseCtx, "process-item")  // 4 allocs, 64ns
     processItem(ctx, items[i])
 }
 
-// ✅ GOOD: Reuse context across iterations
-ctx := xlog.WithOperation(baseCtx, "process-batch")
+// ✅ BEST PRACTICE: 0 allocations, 32x faster
+ctx := xlog.WithOperation(baseCtx, "process-batch")  // One-time cost
 for i := 0; i < 1000; i++ {
-    processItem(ctx, items[i])
+    processItem(ctx, items[i])  // 0 allocs, 2ns
 }
 ```
 
-#### 2. Choose the Right Context Function
+**Impact**: Reusing context is **32x faster** and produces **zero allocations** vs creating in loop.
 
-- **For single log statements**: Pass fields directly (most efficient)
-  ```go
-  xlog.Info(ctx, "processing", zap.String("user_id", userID))
-  ```
+#### 2. ✅ Pass Fields Directly for Single Logs
 
-- **For multiple logs with same fields**: Use `WithFields` (better than `WithOperation`)
-  ```go
-  ctx = xlog.WithFields(ctx, zap.String("user_id", userID))
-  xlog.Info(ctx, "started")
-  xlog.Info(ctx, "finished")
-  ```
-
-- **For logger namespace separation**: Use `WithOperation` (has overhead)
-  ```go
-  ctx = xlog.WithOperation(ctx, "payment-processor", fields...)
-  ```
-
-#### 3. Appropriate Span Granularity
-
-Spans are relatively expensive (~730ns). Create them at appropriate granularity:
+For one-off log statements, pass fields directly (most efficient):
 
 ```go
-// ❌ BAD: Span for trivial operation in loop
+// ✅ BEST: 0 allocations
+xlog.Info(ctx, "processing order",
+    xlog.String("order_id", orderID),
+    xlog.String("status", "pending"),
+)
+```
+
+#### 3. ✅ Use WithFields for Multiple Logs
+
+When logging multiple times with the same fields, create enriched context once:
+
+```go
+// ✅ GOOD: Create context once, reuse many times
+ctx = xlog.WithFields(ctx,
+    xlog.String("user_id", userID),
+    xlog.String("session_id", sessionID),
+)
+
+// All subsequent logs include these fields with 0 allocations
+xlog.Info(ctx, "user authenticated")  // 0 allocs
+xlog.Debug(ctx, "loading preferences")  // 0 allocs
+xlog.Info(ctx, "session started")  // 0 allocs
+```
+
+#### 4. ⚠️ Use WithOperation Sparingly
+
+`WithOperation` creates a named logger (affects log namespace). Use only when needed:
+
+```go
+// ✅ WHEN TO USE: You need operation in logger namespace
+ctx = xlog.WithOperation(ctx, "payment-processor",
+    xlog.String("user_id", userID),
+)
+
+// ⚠️ ALTERNATIVE: Use WithFields + operation field (same performance)
+ctx = xlog.WithFields(ctx,
+    xlog.String("operation", "payment-processor"),
+    xlog.String("user_id", userID),
+)
+```
+
+#### 5. ✅ Appropriate Span Granularity
+
+Spans have moderate cost (~670ns, 7 allocs). Create them at appropriate granularity:
+
+```go
+// ❌ BAD: Span per row (thousands of allocations)
 for row := range rows {
     ctx, span := xlog.WithOperationSpan(ctx, "validate-row")
     validate(row)
     span.End()
 }
 
-// ✅ GOOD: Span for the entire batch
-ctx, span := xlog.WithOperationSpan(ctx, "validate-rows")
+// ✅ GOOD: One span for entire batch
+ctx, span := xlog.WithOperationSpan(ctx, "validate-batch")
 defer span.End()
 for row := range rows {
-    validate(row)
+    validate(row)  // 0 allocations
 }
 ```
 
-#### 4. Use Structured Logging
+#### 6. ✅ Prefer Structured Logging
 
-Prefer structured fields over printf-style formatting:
+Structured fields are more efficient and enable better log analysis:
 
 ```go
-// ❌ Less efficient
-xlog.Infof(ctx, "user %s logged in with IP %s", userID, ip)
+// ⚠️ Less efficient and harder to query
+xlog.Infof(ctx, "user %s logged in from IP %s", userID, ip)
 
-// ✅ More efficient and structured
+// ✅ Efficient and queryable
 xlog.Info(ctx, "user logged in",
-    zap.String("user_id", userID),
-    zap.String("ip", ip),
+    xlog.String("user_id", userID),
+    xlog.String("ip", ip),
 )
 ```
+
+### Performance Anti-Patterns to Avoid
+
+| Anti-Pattern | Impact | Fix |
+|-------------|--------|-----|
+| `WithOperation/WithFields in loop` | +4-7 allocs/iter, 32x slower | Create context once before loop |
+| `WithOperationSpan per item` | +7 allocs/iter, 670ns | Create span for batch |
+| `Printf-style logging` | String allocations | Use structured fields |
+| `Unused enriched context` | Wasted allocations | Pass fields directly if logging once |
+
+### Measured Performance (Apple M4 Pro)
+
+Based on comprehensive benchmarking with statistical significance (n=10):
+
+| Operation | Time | Allocations | Use Case |
+|-----------|------|-------------|----------|
+| Basic logging | ~2ns | 0 | Hot path logging |
+| Context reuse | ~2ns | 0 | Multiple logs with same context |
+| Context creation (WithOperation) | ~61ns | 4 | Setup phase only |
+| Context creation (WithFields) | ~99ns | 5 | Setup phase only |
+| WithOperationSpan | ~670ns | 7 | Request/operation boundaries |
+
+**Key Insight**: The adapter overhead is negligible (~2ns) when using proper patterns (context reuse). Anti-patterns (create in loop) show 100% allocation increase.
 
 ## License
 

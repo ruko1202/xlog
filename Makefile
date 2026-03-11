@@ -84,6 +84,19 @@ test-cov:
 # Benchmarking and performance analysis
 # -------------------------------------
 
+# BENCHMARK_FILE - Target file for benchmark results
+# Default: benchmarks.txt
+BENCHMARK_FILE ?= benchmarks.txt
+
+# BASELINE_FILE - Baseline benchmark file for comparison
+# Default: benchmarks_baseline.txt
+BASELINE_FILE ?= benchmarks_baseline.txt
+
+# BENCH_COMPARE_FILE - benchmark compare result file
+# Default: benchmarks_compare.txt
+BENCH_COMPARE_FILE ?= benchmarks_compare.txt
+
+
 # bench - Run full benchmark suite and save results
 # Options:
 #   -bench=.: Run all benchmarks
@@ -96,21 +109,21 @@ test-cov:
 .bench: file=
 .bench:
 	$(info Running benchmarks and saving to ${file}...)
-	@go test -bench=. -benchmem -benchtime=3s -run='^$$' | tee ${file}
+	@go test -bench=. -benchmem -benchtime=1s -count=10 -run='^$$' | tee ${file}
 
 # bench - Save current benchmarks for future comparisons with baseline
 # This creates a baseline file that can be used with bench-compare
 # benchmarks.txt - target file for benchmark results
 .PHONY: bench
 bench:
-	make .bench file=my_benchmarks.txt=benchmarks.txt
+	@make .bench file=${BENCHMARK_FILE}
 
 # bench-baseline - Save current benchmarks as baseline for future comparisons
 # This creates a baseline file that can be used with bench-compare
 # benchmarks_baseline.txt - baseline benchmark file for comparison
 .PHONY: bench-baseline
 bench-baseline:
-	make .bench file=my_benchmarks.txt=benchmarks_baseline.txt
+	@make .bench file=${BASELINE_FILE}
 
 # bench-compare - Compare current benchmarks with baseline
 # Requires benchstat to be installed (will auto-install if missing)
@@ -126,7 +139,7 @@ bench-compare:
 	@echo "Baseline: $(BASELINE_FILE)"
 	@echo "Current:  $(BENCHMARK_FILE)"
 	@echo ""
-	@$(GOBIN)/benchstat $(BASELINE_FILE) $(BENCHMARK_FILE)
+	@$(GOBIN)/benchstat $(BASELINE_FILE) $(BENCHMARK_FILE) | tee ${BENCH_COMPARE_FILE}
 
 # bench-full - Run benchmarks and compare with baseline in one command
 # This is a convenience target that runs both bench and bench-compare
@@ -134,14 +147,6 @@ bench-compare:
 # Example: make bench-full
 .PHONY: bench-full
 bench-full: bench bench-compare
-
-# bench-quick - Run quick benchmarks (1s per benchmark instead of 3s)
-# Useful for rapid iteration during development
-# Output: BENCHMARK_FILE (default: benchmarks.txt)
-.PHONY: bench-quick
-bench-quick:
-	$(info Running quick benchmarks and saving to $(BENCHMARK_FILE)...)
-	@go test -bench=. -benchmem -benchtime=1s -run='^$$' | tee $(BENCHMARK_FILE)
 
 # bench-res - Run benchmarks with CPU and memory profiling
 # Generates cpu.prof and mem.prof file for analysis with pprof
