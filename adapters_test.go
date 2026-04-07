@@ -36,24 +36,62 @@ func TestAdapters(t *testing.T) {
 	t.Run("zap", func(t *testing.T) {
 		testAdapter(t, initZapAdapter)
 
-		t.Run("Unwrap returns underlying logger", func(t *testing.T) {
-			logger := zap.NewNop()
-			adapter := NewZapAdapter(logger).(*ZapAdapter)
+		t.Run("Unwrap", func(t *testing.T) {
+			t.Run("Unwrap generic returns zap logger", func(t *testing.T) {
+				logger := zap.NewNop()
+				adapter := NewZapAdapter(logger)
 
-			unwrapped := adapter.Unwrap()
-			assert.Equal(t, logger, unwrapped)
+				got, ok := Unwrap[*zap.Logger](adapter)
+				require.True(t, ok)
+				assert.Equal(t, logger, got)
+			})
+
+			t.Run("Unwrap generic returns zap logger after With", func(t *testing.T) {
+				adapter := NewZapAdapter(zap.NewNop()).With(xfield.String("k", "v"))
+
+				got, ok := Unwrap[*zap.Logger](adapter)
+				require.True(t, ok)
+				assert.NotNil(t, got)
+			})
+
+			t.Run("Unwrap generic returns false for wrong type", func(t *testing.T) {
+				adapter := NewZapAdapter(zap.NewNop())
+
+				got, ok := Unwrap[*slog.Logger](adapter)
+				assert.False(t, ok)
+				assert.Nil(t, got)
+			})
 		})
 	})
 
 	t.Run("slog", func(t *testing.T) {
 		testAdapter(t, initSlogAdapter)
 
-		t.Run("Unwrap returns underlying logger", func(t *testing.T) {
-			logger := slog.Default()
-			adapter := NewSlogAdapter(logger).(*SlogAdapter)
+		t.Run("Unwrap", func(t *testing.T) {
+			t.Run("Unwrap generic returns slog logger", func(t *testing.T) {
+				logger := slog.Default()
+				adapter := NewSlogAdapter(logger)
 
-			unwrapped := adapter.Unwrap()
-			assert.Equal(t, logger, unwrapped)
+				got, ok := Unwrap[*slog.Logger](adapter)
+				require.True(t, ok)
+				assert.Equal(t, logger, got)
+			})
+
+			t.Run("Unwrap generic returns slog logger after With", func(t *testing.T) {
+				adapter := NewSlogAdapter(slog.Default()).With(xfield.String("k", "v"))
+
+				got, ok := Unwrap[*slog.Logger](adapter)
+				require.True(t, ok)
+				assert.NotNil(t, got)
+			})
+
+			t.Run("Unwrap generic returns false for logger without Unwrapper", func(t *testing.T) {
+				adapter := NewSlogAdapter(slog.Default())
+
+				got, ok := Unwrap[*zap.Logger](adapter)
+				assert.False(t, ok)
+				assert.Nil(t, got)
+			})
 		})
 	})
 }

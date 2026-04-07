@@ -8,6 +8,11 @@ import (
 	"github.com/ruko1202/xlog/xfield"
 )
 
+var (
+	_ Logger                 = (*ZapAdapter)(nil)
+	_ Unwrapper[*zap.Logger] = (*ZapAdapter)(nil)
+)
+
 // ZapAdapter adapts a zap.Logger to the xlog.Logger interface.
 type ZapAdapter struct {
 	logger *zap.Logger
