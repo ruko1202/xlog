@@ -3,9 +3,10 @@
 [![CI](https://github.com/ruko1202/xlog/actions/workflows/ci.yml/badge.svg)](https://github.com/ruko1202/xlog/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ruko1202/xlog)](https://goreportcard.com/report/github.com/ruko1202/xlog)
 ![Coverage](https://img.shields.io/badge/Coverage-76.3%25-brightgreen)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ruko1202/xlog.svg)](https://pkg.go.dev/github.com/ruko1202/xlog)
 
-A wrapper around [zap](https://github.com/uber-go/zap) for context-aware logging.
+xlog is a Go logging toolkit for context-aware structured logging. It stores loggers in context, falls back to a global logger, supports zap and slog adapters, and includes OpenTelemetry tracing helpers.
 
 ## Features
 
@@ -711,7 +712,7 @@ Based on comprehensive benchmarking with statistical significance (n=10):
 
 ## License
 
-MIT
+[MIT](LICENSE)
 
 ## Dependencies
 

@@ -1,7 +1,7 @@
-// Package xlog provides a wrapper around uber-go/zap for context-aware logging.
+// Package xlog provides a Go logging toolkit for context-aware structured logging.
 //
-// The package allows storing a logger in context and automatically extracting it
-// when logging functions are called. If logger is not found in context, the global logger is used.
+// It stores loggers in context, falls back to a global logger, supports zap and
+// slog adapters, and includes OpenTelemetry tracing helpers.
 package xlog
 
 import (
